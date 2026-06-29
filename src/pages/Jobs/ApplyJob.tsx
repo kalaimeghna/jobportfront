@@ -1,198 +1,194 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 
 const ApplyJob = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(false);
-
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phone: "",
     coverLetter: "",
-    resume: null as File | null,
   });
 
+  const [resume, setResume] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleResumeUpload = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData({
-        ...formData,
-        resume: e.target.files[0],
-      });
+      setResume(e.target.files[0]);
     }
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const validate = () => {
+    if (!formData.fullName || !formData.email || !formData.phone) {
+      return "Please fill all required fields";
+    }
+    if (!resume) {
+      return "Please upload your resume";
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setMessage("");
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     try {
       setLoading(true);
 
-      const applicationData = new FormData();
+      // Step 1: Upload resume
+      const formDataFile = new FormData();
+      formDataFile.append("file", resume as File);
 
-      applicationData.append(
-        "fullName",
-        formData.fullName
-      );
-      applicationData.append("email", formData.email);
-      applicationData.append("phone", formData.phone);
-      applicationData.append(
-        "coverLetter",
-        formData.coverLetter
-      );
+      const resumeRes = await fetch("http://localhost:5000/api/resumes", {
+        method: "POST",
+        body: formDataFile,
+        credentials: "include",
+      });
 
-      if (formData.resume) {
-        applicationData.append(
-          "resume",
-          formData.resume
-        );
+      const resumeData = await resumeRes.json();
+
+      if (!resumeRes.ok) {
+        throw new Error(resumeData.message || "Resume upload failed");
       }
 
-      console.log("Applying for Job:", id);
+      const jobId = window.location.pathname.split("/").pop();
 
-      // Example Redux
-      // await dispatch(
-      //   applyJob({
-      //     jobId: id,
-      //     data: applicationData,
-      //   })
-      // ).unwrap();
+      // Step 2: Apply for job
+      const applyRes = await fetch(
+        `http://localhost:5000/api/applications/${jobId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            coverLetter: formData.coverLetter,
+            resumeUrl: resumeData.fileUrl,
+          }),
+        }
+      );
 
-      alert("Application submitted successfully!");
+      const applyData = await applyRes.json();
 
-      navigate("/jobs");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to apply");
+      if (!applyRes.ok) {
+        throw new Error(applyData.message || "Application failed");
+      }
+
+      setMessage("Application submitted successfully!");
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        coverLetter: "",
+      });
+      setResume(null);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="bg-white rounded-xl shadow-md p-8">
-        <h1 className="text-3xl font-bold mb-2">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white shadow-lg rounded-xl p-6">
+        <h1 className="text-2xl font-bold text-center mb-2">Job Portal</h1>
+        <h2 className="text-lg text-center text-gray-600 mb-6">
           Apply for Job
-        </h1>
-
-        <p className="text-gray-500 mb-8">
+        </h2>
+        <p className="text-center text-sm text-gray-500 mb-6">
           Fill out the application form below.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6"
-        >
-          {/* Name */}
-          <div>
-            <label className="block mb-2 font-medium">
-              Full Name
-            </label>
-
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-lg px-4 py-3"
-              placeholder="Enter your name"
-            />
+        {error && (
+          <div className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">
+            {error}
           </div>
+        )}
+
+        {message && (
+          <div className="bg-green-100 text-green-700 p-2 rounded mb-4 text-sm">
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Full Name */}
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Enter your name"
+            value={formData.fullName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
 
           {/* Email */}
-          <div>
-            <label className="block mb-2 font-medium">
-              Email
-            </label>
-
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-lg px-4 py-3"
-              placeholder="Enter your email"
-            />
-          </div>
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
 
           {/* Phone */}
-          <div>
-            <label className="block mb-2 font-medium">
-              Phone Number
-            </label>
-
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-lg px-4 py-3"
-              placeholder="Enter your phone number"
-            />
-          </div>
+          <input
+            type="text"
+            name="phone"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
 
           {/* Resume */}
           <div>
-            <label className="block mb-2 font-medium">
-              Upload Resume
-            </label>
-
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleResumeUpload}
-              className="w-full border rounded-lg px-4 py-3"
-            />
+            <label className="block mb-1 font-medium">Upload Resume</label>
+            <input type="file" onChange={handleFileChange} />
           </div>
 
           {/* Cover Letter */}
-          <div>
-            <label className="block mb-2 font-medium">
-              Cover Letter
-            </label>
-
-            <textarea
-              name="coverLetter"
-              rows={6}
-              value={formData.coverLetter}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-3"
-              placeholder="Tell the employer why you're a good fit..."
-            />
-          </div>
+          <textarea
+            name="coverLetter"
+            placeholder="Tell the employer why you're a good fit..."
+            value={formData.coverLetter}
+            onChange={handleChange}
+            className="w-full p-2 border rounded h-32"
+          />
 
           {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
           >
-            {loading
-              ? "Submitting..."
-              : "Submit Application"}
+            {loading ? "Submitting..." : "Submit Application"}
           </button>
         </form>
+
+        <p className="text-center text-xs text-gray-400 mt-6">
+          © 2026 Job Portal. All rights reserved.
+        </p>
       </div>
     </div>
   );

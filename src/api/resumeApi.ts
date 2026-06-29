@@ -1,36 +1,24 @@
 import axiosInstance from "./axios";
 
-/* =========================
-   TYPES
-========================= */
-
 export interface Resume {
   _id: string;
-  fileUrl: string;
-  originalName: string;
-  uploadedAt: string;
+  user: string;
+  file: string;
+  title: string;
+  createdAt: string;
 }
 
 export interface ResumeResponse {
   success: boolean;
-  message: string;
-  resume: Resume;
+  data: Resume;
 }
-
-/* =========================
-   RESUME APIs
-========================= */
 
 // Upload Resume
 export const uploadResume = async (
-  file: File
+  formData: FormData
 ): Promise<ResumeResponse> => {
-  const formData = new FormData();
-
-  formData.append("resume", file);
-
   const response = await axiosInstance.post(
-    "/resume",
+    "/resumes",
     formData,
     {
       headers: {
@@ -42,10 +30,10 @@ export const uploadResume = async (
   return response.data;
 };
 
-// Get My Resume
-export const getMyResume = async () => {
+// Get My Resumes
+export const getMyResumes = async () => {
   const response = await axiosInstance.get(
-    "/resume"
+    "/resumes/my"
   );
 
   return response.data;
@@ -56,29 +44,7 @@ export const getResumeById = async (
   resumeId: string
 ) => {
   const response = await axiosInstance.get(
-    `/resume/${resumeId}`
-  );
-
-  return response.data;
-};
-
-// Update Resume
-export const updateResume = async (
-  resumeId: string,
-  file: File
-) => {
-  const formData = new FormData();
-
-  formData.append("resume", file);
-
-  const response = await axiosInstance.put(
-    `/resume/${resumeId}`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    `/resumes/${resumeId}`
   );
 
   return response.data;
@@ -89,32 +55,7 @@ export const deleteResume = async (
   resumeId: string
 ) => {
   const response = await axiosInstance.delete(
-    `/resume/${resumeId}`
-  );
-
-  return response.data;
-};
-
-// Download Resume
-export const downloadResume = async (
-  resumeId: string
-) => {
-  const response = await axiosInstance.get(
-    `/resume/download/${resumeId}`,
-    {
-      responseType: "blob",
-    }
-  );
-
-  return response.data;
-};
-
-// View Resume
-export const viewResume = async (
-  resumeId: string
-) => {
-  const response = await axiosInstance.get(
-    `/resume/view/${resumeId}`
+    `/resumes/${resumeId}`
   );
 
   return response.data;

@@ -1,23 +1,25 @@
-import axiosInstance from "./axios"
+import axiosInstance from "./axios";
 
 export interface ApplyJobData {
-  jobId: string;
-  resumeId: string;
+  resume: string;
+  coverLetter: string;
 }
 
 export interface UpdateStatusData {
   status:
-    | "applied"
-    | "reviewing"
-    | "interviewed"
-    | "selected"
+    | "pending"
+    | "shortlisted"
+    | "accepted"
     | "rejected";
 }
 
 // Apply for a job
-export const applyJob = async (data: ApplyJobData) => {
+export const applyJob = async (
+  jobId: string,
+  data: ApplyJobData
+) => {
   const response = await axiosInstance.post(
-    "/applications",
+    `/applications/apply/${jobId}`,
     data
   );
 
@@ -33,7 +35,7 @@ export const getMyApplications = async () => {
   return response.data;
 };
 
-// Get applicants for a specific job (Employer)
+// Get applicants for a specific job
 export const getJobApplicants = async (
   jobId: string
 ) => {
@@ -44,7 +46,7 @@ export const getJobApplicants = async (
   return response.data;
 };
 
-// Update application status (ATS)
+// Update application status
 export const updateApplicationStatus = async (
   applicationId: string,
   data: UpdateStatusData
@@ -57,7 +59,7 @@ export const updateApplicationStatus = async (
   return response.data;
 };
 
-// Get single application
+// Get application by id
 export const getApplicationById = async (
   applicationId: string
 ) => {
@@ -68,7 +70,7 @@ export const getApplicationById = async (
   return response.data;
 };
 
-// Withdraw application
+// Delete application
 export const deleteApplication = async (
   applicationId: string
 ) => {
