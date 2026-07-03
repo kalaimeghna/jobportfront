@@ -5,7 +5,7 @@ import API from "../../api/axios";
 // APPLY FOR A JOB
 // ==========================
 export const applyJob = createAsyncThunk(
-  "application/applyJob",
+  "applications/applyJob",
   async (formData: FormData, { rejectWithValue }) => {
     try {
       const { data } = await API.post("/applications/apply", formData, {

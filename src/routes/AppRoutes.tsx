@@ -69,7 +69,7 @@ const AppRoutes = () => {
         {/* Jobs */}
         <Route path="jobs" element={<Jobs />} />
         <Route path="jobs/:id" element={<JobDetails />} />
-        <Route path="jobs/apply/:id" element={<ApplyJob />} />
+        <Route path="jobs/apply/:jobId" element={<ApplyJob />} />
         <Route path="recommended-jobs" element={<RecommendedJobs />} />
 
         {/* Resume */}

@@ -1,204 +1,114 @@
-import { Link, useParams } from "react-router-dom";
-import {
-  FaMapMarkerAlt,
-  FaMoneyBillWave,
-  FaBriefcase,
-  FaBuilding,
-} from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import axiosInstance from "../../api/axios";
 
-const JobDetails = () => {
-  const { id } = useParams();
+interface Company {
+  name?: string;
+}
 
-  // Dummy Data (Replace with API/Redux Data)
-  const job = {
-    _id: id,
-    title: "Frontend Developer",
-    company: "Google",
-    location: "Remote",
-    salary: "₹12 LPA",
-    jobType: "Full Time",
-    experience: "2+ Years",
-    description:
-      "We are looking for a skilled Frontend Developer with strong experience in React, TypeScript, and Tailwind CSS. You will work closely with designers and backend developers to build scalable web applications.",
-    responsibilities: [
-      "Develop responsive web applications",
-      "Write clean and maintainable code",
-      "Collaborate with backend developers",
-      "Optimize application performance",
-    ],
-    requirements: [
-      "2+ years of React experience",
-      "Strong JavaScript and TypeScript skills",
-      "Knowledge of Redux Toolkit",
-      "Experience with REST APIs",
-    ],
-    postedDate: "2 Days Ago",
+interface Job {
+  _id: string;
+  title: string;
+  company: Company | null;
+  location: string;
+  salary: number;
+  jobType: string;
+}
+
+const Jobs = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const { data } = await axiosInstance.get("/jobs");
+
+      if (data.success) {
+        setJobs(data.jobs);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
-      {/* Job Header */}
-      <div className="bg-white rounded-xl shadow-md p-8 mb-8">
-        <h1 className="text-4xl font-bold text-gray-800">
-          {job.title}
-        </h1>
-
-        <div className="flex flex-wrap gap-6 mt-4 text-gray-600">
-          <div className="flex items-center gap-2">
-            <FaBuilding />
-            <span>{job.company}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <FaMapMarkerAlt />
-            <span>{job.location}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <FaMoneyBillWave />
-            <span>{job.salary}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <FaBriefcase />
-            <span>{job.jobType}</span>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-4">
-          <Link
-            to={`/jobs/apply/${job._id}`}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            Apply Now
-          </Link>
-
-          <button className="border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition">
-            Save Job
-          </button>
-        </div>
+  if (loading) {
+    return (
+      <div className="text-center mt-20 text-xl">
+        Loading Jobs...
       </div>
+    );
+  }
 
-      {/* Job Content */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left Side */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Description */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-2xl font-semibold mb-4">
-              Job Description
+  if (jobs.length === 0) {
+    return (
+      <div className="text-center mt-20">
+        <h2 className="text-3xl font-bold">
+          No Jobs Available
+        </h2>
+
+        <p className="text-gray-500 mt-3">
+          Create a job first from Employer Dashboard.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto py-10 px-5">
+      <h1 className="text-4xl font-bold mb-8">
+        Latest Jobs
+      </h1>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {jobs.map((job) => (
+          <div
+            key={job._id}
+            className="bg-white rounded-xl shadow-lg p-6"
+          >
+            <h2 className="text-2xl font-bold">
+              {job.title}
             </h2>
 
-            <p className="text-gray-600 leading-7">
-              {job.description}
+            <p className="text-gray-500 mt-2">
+              {job.company?.name || "Company"}
             </p>
-          </div>
 
-          {/* Responsibilities */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-2xl font-semibold mb-4">
-              Responsibilities
-            </h2>
+            <p>{job.location}</p>
 
-            <ul className="list-disc pl-6 space-y-2 text-gray-600">
-              {job.responsibilities.map(
-                (item, index) => (
-                  <li key={index}>{item}</li>
-                )
-              )}
-            </ul>
-          </div>
+            <p className="text-green-600 font-semibold mt-2">
+              ₹{job.salary.toLocaleString()}
+            </p>
 
-          {/* Requirements */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-2xl font-semibold mb-4">
-              Requirements
-            </h2>
+            <p className="mt-2">
+              {job.jobType}
+            </p>
 
-            <ul className="list-disc pl-6 space-y-2 text-gray-600">
-              {job.requirements.map(
-                (item, index) => (
-                  <li key={index}>{item}</li>
-                )
-              )}
-            </ul>
-          </div>
-        </div>
+            <div className="flex gap-3 mt-5">
+              <Link
+                to={`/jobs/${job._id}`}
+                className="bg-gray-200 px-5 py-2 rounded"
+              >
+                View
+              </Link>
 
-        {/* Right Side */}
-        <div>
-          <div className="bg-white rounded-xl shadow-md p-6 sticky top-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Job Overview
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-gray-500 text-sm">
-                  Company
-                </p>
-                <p className="font-medium">
-                  {job.company}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-500 text-sm">
-                  Location
-                </p>
-                <p className="font-medium">
-                  {job.location}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-500 text-sm">
-                  Salary
-                </p>
-                <p className="font-medium">
-                  {job.salary}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-500 text-sm">
-                  Job Type
-                </p>
-                <p className="font-medium">
-                  {job.jobType}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-500 text-sm">
-                  Experience
-                </p>
-                <p className="font-medium">
-                  {job.experience}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-500 text-sm">
-                  Posted
-                </p>
-                <p className="font-medium">
-                  {job.postedDate}
-                </p>
-              </div>
+              <Link
+                to={`/jobs/apply/${job._id}`}
+                className="bg-blue-600 text-white px-5 py-2 rounded"
+              >
+                Apply
+              </Link>
             </div>
-
-            <Link
-              to={`/jobs/apply/${job._id}`}
-              className="block mt-6 text-center bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
-            >
-              Apply for this Job
-            </Link>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 };
 
-export default JobDetails;
+export default Jobs;
