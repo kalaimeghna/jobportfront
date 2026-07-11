@@ -29,14 +29,20 @@ const Analytics: React.FC = () => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const { data: response } = await axiosInstance.get("/applications/employer");
+        // Corrected endpoint to match your backend route definition
+        const { data: response } = await axiosInstance.get("/applications/employer/dashboard");
         const applications: Application[] = response?.data || response || [];
 
         const jobMap: Record<string, any> = {};
         applications.forEach((app) => {
           if (!app.job) return;
           if (!jobMap[app.job._id]) {
-            jobMap[app.job._id] = { _id: app.job._id, title: app.job.title, applicationsCount: 0, status: app.job.status || "active" };
+            jobMap[app.job._id] = { 
+              _id: app.job._id, 
+              title: app.job.title, 
+              applicationsCount: 0, 
+              status: app.job.status || "active" 
+            };
           }
           jobMap[app.job._id].applicationsCount++;
         });

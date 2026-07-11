@@ -7,8 +7,10 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
+
 import axiosInstance from "../../api/axios";
 import JobCard from "../../components/Jobs/JobCard";
+import CompanyCard from "../../components/Company/CompanyCard";
 
 const SectionHeading = ({
   title,
@@ -21,50 +23,56 @@ const SectionHeading = ({
     <h2 className="text-3xl font-black text-slate-950 tracking-tight">
       {title}
     </h2>
-    <p className="text-slate-500 mt-2 font-medium">{subtitle}</p>
+
+    <p className="text-slate-500 mt-2 font-medium">
+      {subtitle}
+    </p>
   </div>
 );
 
 const Home = () => {
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axiosInstance.get("/jobs/recommended");
+        const [jobRes, companyRes] = await Promise.all([
+          axiosInstance.get("/jobs/recommended"),
+          axiosInstance.get("/companies"),
+        ]);
 
-        console.log("Recommendations API Response:", res.data);
-
-        if (res.data?.success) {
-          setRecommendations((res.data.data || []).slice(0, 3));
-        } else {
-          setRecommendations([]);
+        // Recommended Jobs
+        if (jobRes.data?.success) {
+          setRecommendations((jobRes.data.data || []).slice(0, 3));
         }
-      } catch (err: any) {
-        console.error("Failed to fetch recommendations");
 
-        console.log("Status:", err.response?.status);
-        console.log("Response:", err.response?.data);
-        console.log("Message:", err.message);
-
-        setRecommendations([]);
+        // Featured Companies
+        if (companyRes.data?.success) {
+          setCompanies((companyRes.data.data || []).slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Error loading home page:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRecommendations();
+    fetchData();
   }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-20">
+
       {/* Hero Section */}
       <section className="bg-slate-950 text-white rounded-[2.5rem] p-8 md:p-20 shadow-2xl relative overflow-hidden">
+
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent" />
 
         <div className="relative z-10 max-w-2xl space-y-6">
+
           <span className="bg-blue-600/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest inline-flex items-center gap-2">
             <Sparkles size={14} />
             Powered by AI Matching
@@ -80,15 +88,23 @@ const Home = () => {
           </p>
 
           <div className="bg-white p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-xl mt-8">
+
             <div className="flex items-center flex-1 px-4 text-slate-900">
-              <Search size={20} className="text-slate-400" />
+
+              <Search
+                size={20}
+                className="text-slate-400"
+              />
 
               <input
                 className="w-full px-3 py-3 outline-none"
                 placeholder="Job title or keywords..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) =>
+                  setSearchQuery(e.target.value)
+                }
               />
+
             </div>
 
             <Link
@@ -97,12 +113,16 @@ const Home = () => {
             >
               Search
             </Link>
+
           </div>
+
         </div>
+
       </section>
 
       {/* Quick Actions */}
       <section className="grid md:grid-cols-2 gap-8">
+
         {[
           {
             title: "For Employers",
@@ -117,17 +137,23 @@ const Home = () => {
             link: "/profile",
           },
         ].map((item, index) => (
+
           <div
             key={index}
             className="p-8 rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-300"
           >
+
             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-6">
               {item.icon}
             </div>
 
-            <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
+            <h3 className="text-2xl font-bold mb-2">
+              {item.title}
+            </h3>
 
-            <p className="text-slate-500 mb-6">{item.desc}</p>
+            <p className="text-slate-500 mb-6">
+              {item.desc}
+            </p>
 
             <Link
               to={item.link}
@@ -136,41 +162,58 @@ const Home = () => {
               Explore
               <ArrowRight size={16} />
             </Link>
+
           </div>
+
         ))}
+
       </section>
 
       {/* Recommended Jobs */}
+
       <section>
+
         <SectionHeading
           title="Recommended For You"
           subtitle="Top matches based on your verified skills."
         />
 
         {loading ? (
+
           <div className="grid md:grid-cols-3 gap-6">
+
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
                 className="h-64 rounded-3xl bg-slate-100 animate-pulse"
               />
             ))}
+
           </div>
+
         ) : recommendations.length > 0 ? (
+
           <div className="grid md:grid-cols-3 gap-6">
+
             {recommendations.map((job) => (
-              <JobCard key={job._id} job={job} />
+              <JobCard
+                key={job._id}
+                job={job}
+              />
             ))}
+
           </div>
+
         ) : (
+
           <div className="text-center py-20 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200">
+
             <h3 className="text-xl font-semibold text-slate-700">
               No recommendations available
             </h3>
 
             <p className="text-slate-500 mt-2">
-              Complete your profile or check back later for personalized job
-              recommendations.
+              Complete your profile or check back later.
             </p>
 
             <Link
@@ -179,9 +222,69 @@ const Home = () => {
             >
               Browse All Jobs
             </Link>
+
           </div>
+
         )}
+
       </section>
+
+      {/* Featured Companies */}
+
+      <section>
+
+        <SectionHeading
+          title="Featured Companies"
+          subtitle="Top companies hiring now."
+        />
+
+        {companies.length > 0 ? (
+
+          <>
+            <div className="grid md:grid-cols-3 gap-6">
+
+              {companies.map((company) => (
+
+                <CompanyCard
+                  key={company._id}
+                  company={{
+                    ...company,
+                    jobCount: company.jobs?.length || 0,
+                  }}
+                />
+
+              ))}
+
+            </div>
+
+            <div className="text-center mt-10">
+
+              <Link
+                to="/companies"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition"
+              >
+                View All Companies
+                <ArrowRight size={18} />
+              </Link>
+
+            </div>
+
+          </>
+
+        ) : (
+
+          <div className="text-center py-12 rounded-2xl bg-slate-50">
+
+            <p className="text-slate-500">
+              No companies available.
+            </p>
+
+          </div>
+
+        )}
+
+      </section>
+
     </div>
   );
 };

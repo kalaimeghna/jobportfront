@@ -1,117 +1,135 @@
-import { useEffect, useState, FormEvent, ChangeEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import axiosInstance from "../../api/axios";
-import { Loader2, Save, X } from "lucide-react";
-
-interface JobFormData {
-  title: string;
-  description: string;
-  company: string;
-  location: string;
-  salary: string;
-  jobType: string;
-  experience: string;
-  skills: string;
-}
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const EditJob = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState<JobFormData>({
-    title: "", description: "", company: "", location: "",
-    salary: "", jobType: "Full Time", experience: "", skills: "",
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    requirements: '',
+    salary: '',
+    location: '',
+    jobType: 'Full-time',
   });
-
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        setFetching(true);
-        const { data } = await axiosInstance.get(`/jobs/${id}`);
-        setFormData(data);
-      } catch (err: any) {
-        setError("Failed to load job details.");
+        const response = await axios.get(`/api/jobs/${id}`);
+        setFormData(response.data);
+      } catch (error) {
+        console.error('Error fetching job details', error);
+        alert('Could not load job details');
       } finally {
-        setFetching(false);
+        setLoading(false);
       }
     };
-    if (id) fetchJob();
+    fetchJob();
   }, [id]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     try {
-      await axiosInstance.put(`/jobs/${id}`, formData);
-      navigate("/employer/jobs");
-    } catch (err) {
-      alert("Failed to update job.");
+      await axios.put(`/api/jobs/${id}`, formData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      navigate('/employer/my-jobs');
+    } catch (error) {
+      console.error('Error updating job', error);
+      alert('Failed to update job');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (fetching) return <div className="p-20 text-center text-slate-500"><Loader2 className="animate-spin inline mr-2" /> Loading job...</div>;
-  if (error) return <div className="p-20 text-center text-rose-600 font-bold">{error}</div>;
+  if (loading) return <div className="text-center mt-10">Loading job details...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-black text-slate-950 mb-6">Edit Job Listing</h1>
-      
-      <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-slate-100 p-8 shadow-xl space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input label="Job Title" name="title" value={formData.title} onChange={handleChange} required />
-          <Input label="Company Name" name="company" value={formData.company} onChange={handleChange} required />
-          <Input label="Location" name="location" value={formData.location} onChange={handleChange} required />
-          
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-6">Edit Job Posting</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium">Job Title</label>
+          <input
+            name="title"
+            value={formData.title}
+            required
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            required
+            className="w-full p-2 border rounded"
+            rows={4}
+            onChange={handleChange}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Requirements</label>
+          <input
+            name="requirements"
+            value={formData.requirements}
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Job Type</label>
-            <select name="jobType" value={formData.jobType} onChange={handleChange} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition">
-              {["Full Time", "Part Time", "Internship", "Contract"].map(t => <option key={t} value={t}>{t}</option>)}
+            <label className="block text-sm font-medium">Salary</label>
+            <input
+              name="salary"
+              value={formData.salary}
+              className="w-full p-2 border rounded"
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Job Type</label>
+            <select 
+              name="jobType" 
+              value={formData.jobType} 
+              className="w-full p-2 border rounded" 
+              onChange={handleChange}
+            >
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Contract">Contract</option>
             </select>
           </div>
-
-          <Input label="Salary Package" name="salary" value={formData.salary} onChange={handleChange} />
-          <Input label="Experience Needed" name="experience" value={formData.experience} onChange={handleChange} />
-          
-          <div className="md:col-span-2">
-            <Input label="Skills Required" name="skills" value={formData.skills} onChange={handleChange} />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
-            <textarea name="description" rows={5} value={formData.description} onChange={handleChange} required className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition" />
-          </div>
         </div>
-
-        <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
-          <button type="button" onClick={() => navigate(-1)} className="flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition">
-            <X size={18} /> Cancel
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 bg-green-600 text-white p-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+          >
+            {submitting ? 'Updating...' : 'Save Changes'}
           </button>
-          <button type="submit" disabled={loading} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50">
-            {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-            {loading ? "Saving..." : "Save Changes"}
+          <button
+            type="button"
+            onClick={() => navigate('/employer/my-jobs')}
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Cancel
           </button>
         </div>
       </form>
     </div>
   );
 };
-
-const Input = ({ label, ...props }: any) => (
-  <div>
-    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{label}</label>
-    <input {...props} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition" />
-  </div>
-);
 
 export default EditJob;

@@ -1,117 +1,98 @@
-import { useState, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import axiosInstance from "../../api/axios";
-import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
-
-interface JobFormData {
-  title: string;
-  department: string;
-  location: string;
-  type: "Full-time" | "Part-time" | "Contract" | "Remote";
-  salaryRange: string;
-  description: string;
-  requirements: string;
-}
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const CreateJob = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<JobFormData>({
-    title: "",
-    department: "",
-    location: "",
-    type: "Full-time",
-    salaryRange: "",
-    description: "",
-    requirements: "",
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    requirements: '',
+    salary: '',
+    location: '',
+    jobType: 'Full-time',
   });
+  const [loading, setLoading] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setStatus(null);
-
+    setLoading(true);
     try {
-      await axiosInstance.post("/jobs", formData);
-      setStatus({ type: "success", text: "Job posting created successfully!" });
-      setTimeout(() => navigate("/jobs"), 2000);
-    } catch (err: any) {
-      setStatus({ 
-        type: "error", 
-        text: err.response?.data?.message || "Failed to publish job. Please check your connection." 
+      await axios.post('/api/jobs', formData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      navigate('/employer/my-jobs');
+    } catch (error) {
+      console.error('Error creating job', error);
+      alert('Failed to create job');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-950">Post a New Opportunity</h1>
-        <p className="text-slate-500 mt-1">Define the role requirements and publish to your portal.</p>
-      </div>
-
-      {status && (
-        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 border ${status.type === "success" ? "bg-emerald-50 border-emerald-100 text-emerald-800" : "bg-rose-50 border-rose-100 text-rose-800"}`}>
-          {status.type === "success" ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-          <p className="text-sm font-bold">{status.text}</p>
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-6">Post a New Job</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium">Job Title</label>
+          <input
+            name="title"
+            required
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+          />
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField label="Job Title" name="title" required value={formData.title} onChange={handleInputChange} placeholder="e.g. Senior Frontend Developer" />
-          <InputField label="Department" name="department" required value={formData.department} onChange={handleInputChange} placeholder="e.g. Engineering" />
-          
+        <div>
+          <label className="block text-sm font-medium">Description</label>
+          <textarea
+            name="description"
+            required
+            className="w-full p-2 border rounded"
+            rows={4}
+            onChange={handleChange}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Requirements</label>
+          <input
+            name="requirements"
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Job Type</label>
-            <select name="type" value={formData.type} onChange={handleInputChange} className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-600 outline-none transition">
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Contract">Contract</option>
-              <option value="Remote">Remote</option>
+            <label className="block text-sm font-medium">Salary</label>
+            <input
+              name="salary"
+              className="w-full p-2 border rounded"
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Job Type</label>
+            <select name="jobType" className="w-full p-2 border rounded" onChange={handleChange}>
+              <option>Full-time</option>
+              <option>Part-time</option>
+              <option>Contract</option>
             </select>
           </div>
-          
-          <InputField label="Location" name="location" value={formData.location} onChange={handleInputChange} placeholder="e.g. New York, NY" />
-          
-          <div className="md:col-span-2">
-            <InputField label="Salary Range" name="salaryRange" value={formData.salaryRange} onChange={handleInputChange} placeholder="e.g. $100k - $130k" />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
-            <textarea name="description" required rows={4} value={formData.description} onChange={handleInputChange} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Requirements</label>
-            <textarea name="requirements" required rows={3} value={formData.requirements} onChange={handleInputChange} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
-          </div>
         </div>
-
-        <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
-          {isSubmitting && <Loader2 className="animate-spin" size={20} />}
-          {isSubmitting ? "Publishing..." : "Publish Job Posting"}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {loading ? 'Posting...' : 'Post Job'}
         </button>
       </form>
     </div>
   );
 };
-
-const InputField = ({ label, ...props }: any) => (
-  <div>
-    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{label}</label>
-    <input {...props} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
-  </div>
-);
 
 export default CreateJob;

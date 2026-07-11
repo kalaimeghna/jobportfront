@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { FaBriefcase, FaUsers, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import axiosInstance from "../../api/axios";
+import { RootState } from "../../app/store"; // Adjust path as needed
 
 // --- Types ---
 interface RecentApplication {
@@ -30,28 +32,53 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const Dashboard: React.FC = () => {
+  const { user } = useSelector((state: RootState) => state.auth);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosInstance.get("/analytics/metrics");
-        setData(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, []);
+    // Only fetch data if the user is an employer
+    if (user?.role === "employer") {
+      const fetchDashboardData = async () => {
+        try {
+          setLoading(true);
+          const response = await axiosInstance.get("/analytics/metrics");
+          setData(response.data);
+        } catch (err: any) {
+          setError(err.response?.data?.message || "Failed to load dashboard data.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
+  // Loading state
   if (loading) return <div className="min-h-[40vh] flex items-center justify-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
-  if (error) return <div className="p-8 bg-rose-50 text-rose-700 rounded-xl">{error}</div>;
 
+  // Error state (only for Employers)
+  if (error) return <div className="p-8 bg-rose-50 text-rose-700 rounded-xl m-6">{error}</div>;
+
+  // Jobseeker View
+  if (user?.role !== "employer") {
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <h1 className="text-3xl font-black text-slate-950">Welcome back, {user?.name}!</h1>
+        <p className="text-slate-500 mt-2">Explore the latest job opportunities and track your applications.</p>
+        <div className="mt-8">
+           <Link to="/jobs" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+             Browse Jobs
+           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Employer View
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
       <header>
