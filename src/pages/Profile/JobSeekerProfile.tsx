@@ -1,292 +1,140 @@
-import { useState } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
+import axiosInstance from "../../api/axios";
+import * as Lucide from "lucide-react";
+
+// InputField Component
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  icon: React.ReactNode;
+}
+
+const InputField = ({ label, icon, ...props }: InputProps) => (
+  <div>
+    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{label}</label>
+    <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+      <span className="text-slate-400">{icon}</span>
+      <input {...props} className="w-full bg-transparent outline-none text-slate-900 font-medium" />
+    </div>
+  </div>
+);
 
 const JobSeekerProfile = () => {
   const [loading, setLoading] = useState(false);
-
+  const [fetching, setFetching] = useState(true);
+  
   const [formData, setFormData] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+91 9876543210",
-    location: "Pune, Maharashtra",
-    title: "Frontend Developer",
-    skills: "React, TypeScript, Node.js, MongoDB",
-    experience: "2 Years",
-    education: "B.E Computer Science",
-    bio: "Passionate frontend developer with experience building modern web applications using React and TypeScript.",
-    linkedin: "https://linkedin.com/in/johndoe",
-    github: "https://github.com/johndoe",
+    name: "",
+    email: "",
+    phone: "",
+    bio: "",
+    skills: "",
+    experience: 0,
+    education: "",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement
-    >
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const [imagePreview] = useState<string>("https://ui-avatars.com/api/?name=User&background=random");
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUserProfile = async () => {
+      try {
+        const { data } = await axiosInstance.get("/users/me");
+        const user = data.data || data;
+        
+        if (isMounted) {
+          setFormData({
+            name: user.name || "",
+            email: user.email || "",
+            phone: user.phone || "",
+            bio: user.bio || "",
+            skills: Array.isArray(user.skills) ? user.skills.join(", ") : user.skills || "",
+            experience: user.experience || 0,
+            education: user.education || "",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      } finally {
+        if (isMounted) setFetching(false);
+      }
+    };
+    fetchUserProfile();
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true);
     try {
-      setLoading(true);
-
-      console.log("Profile Updated:", formData);
-
-      // Redux Example
-      // await dispatch(updateProfile(formData)).unwrap();
-
+      const payload = {
+        ...formData,
+        skills: formData.skills.split(",").map((s: string) => s.trim()).filter(s => s !== ""),
+        experience: Number(formData.experience)
+      };
+      await axiosInstance.put("/users/me", payload);
       alert("Profile updated successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to update profile");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update profile.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  if (fetching) return <div className="text-center py-20 text-slate-500 font-bold">Loading your profile...</div>;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        {/* Header */}
-        <div className="bg-blue-600 text-white p-8">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <img
-              src="https://via.placeholder.com/120"
-              alt="Profile"
-              className="w-28 h-28 rounded-full border-4 border-white object-cover"
-            />
+    <div className="max-w-4xl mx-auto py-12 px-6">
+      <header className="mb-10">
+        <h1 className="text-4xl font-black text-slate-950 tracking-tighter">My Profile</h1>
+        <p className="text-slate-500 font-medium mt-2">Manage your professional information and career preferences.</p>
+      </header>
 
-            <div>
-              <h1 className="text-3xl font-bold">
-                Job Seeker Profile
-              </h1>
-
-              <p className="text-blue-100 mt-2">
-                Manage your profile and career information.
-              </p>
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Profile Card */}
+        <div className="flex items-center gap-6 p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <img src={imagePreview} alt="Profile" className="w-20 h-20 rounded-full object-cover border-4 border-slate-50" />
+          <div>
+            <h3 className="font-black text-xl text-slate-950">Profile Photo</h3>
+            <p className="text-slate-500 text-sm">PNG, JPG up to 5MB. Max resolution 800x800px.</p>
+            <button type="button" className="mt-3 text-blue-600 font-bold text-sm hover:underline">Change Photo</button>
           </div>
         </div>
 
-        {/* Form */}
-        <div className="p-8">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6"
-          >
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Name */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  Full Name
-                </label>
+        {/* Form Grid */}
+        <div className="grid md:grid-cols-2 gap-6 p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <InputField label="Full Name" icon={<Lucide.User size={18} />} name="name" value={formData.name} onChange={handleInputChange} />
+          <InputField label="Email Address" icon={<Lucide.Mail size={18} />} name="email" value={formData.email} disabled />
+          <InputField label="Phone Number" icon={<Lucide.Phone size={18} />} name="phone" value={formData.phone} onChange={handleInputChange} />
+          <InputField label="Education" icon={<Lucide.BookOpen size={18} />} name="education" value={formData.education} onChange={handleInputChange} />
+          <div className="md:col-span-2">
+            <InputField label="Experience (Years)" icon={<Lucide.Briefcase size={18} />} name="experience" type="number" value={formData.experience} onChange={handleInputChange} />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Skills (Comma separated)</label>
+            <input name="skills" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" value={formData.skills} onChange={handleInputChange} placeholder="e.g. React, Node.js, TypeScript" />
+          </div>
 
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  Email
-                </label>
-
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  Phone Number
-                </label>
-
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  Location
-                </label>
-
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Job Title */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  Professional Title
-                </label>
-
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Experience */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  Experience
-                </label>
-
-                <input
-                  type="text"
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* Skills */}
-              <div className="md:col-span-2">
-                <label className="block mb-2 font-medium">
-                  Skills
-                </label>
-
-                <input
-                  type="text"
-                  name="skills"
-                  value={formData.skills}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                  placeholder="React, Node.js, MongoDB..."
-                />
-              </div>
-
-              {/* Education */}
-              <div className="md:col-span-2">
-                <label className="block mb-2 font-medium">
-                  Education
-                </label>
-
-                <input
-                  type="text"
-                  name="education"
-                  value={formData.education}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* LinkedIn */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  LinkedIn
-                </label>
-
-                <input
-                  type="url"
-                  name="linkedin"
-                  value={formData.linkedin}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-
-              {/* GitHub */}
-              <div>
-                <label className="block mb-2 font-medium">
-                  GitHub
-                </label>
-
-                <input
-                  type="url"
-                  name="github"
-                  value={formData.github}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-4 py-3"
-                />
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="block mb-2 font-medium">
-                About Me
-              </label>
-
-              <textarea
-                name="bio"
-                rows={5}
-                value={formData.bio}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-3"
-              />
-            </div>
-
-            {/* Profile Image */}
-            <div>
-              <label className="block mb-2 font-medium">
-                Profile Picture
-              </label>
-
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full border rounded-lg px-4 py-3"
-              />
-            </div>
-
-            {/* Resume Upload */}
-            <div>
-              <label className="block mb-2 font-medium">
-                Resume
-              </label>
-
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                className="w-full border rounded-lg px-4 py-3"
-              />
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading
-                ? "Updating..."
-                : "Update Profile"}
-            </button>
-          </form>
+          <div className="md:col-span-2">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Professional Bio</label>
+            <textarea name="bio" rows={4} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" value={formData.bio} onChange={handleInputChange} />
+          </div>
         </div>
-      </div>
+
+        {/* Footer */}
+        <button 
+          disabled={loading} 
+          className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:bg-slate-300"
+        >
+          {loading ? <Lucide.Loader2 className="animate-spin" size={20} /> : "Save Profile Changes"}
+        </button>
+      </form>
     </div>
   );
 };

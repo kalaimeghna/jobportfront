@@ -1,48 +1,87 @@
-import { useState, FC } from "react";
+import React, { FC, FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Search, MapPin } from "lucide-react";
 
 const JobSearch: FC = () => {
-  const [keyword, setKeyword] = useState("");
-  const [location, setLocation] = useState("");
   const navigate = useNavigate();
 
-  const handleSearch = () => {
-    // Navigate to jobs page with query params
-    navigate(
-      `/jobs?keyword=${keyword}&location=${location}`
-    );
+  const [keyword, setKeyword] = useState("");
+  const [location, setLocation] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setLoading(true);
+
+    const params = new URLSearchParams();
+
+    if (keyword.trim()) {
+      params.set("keyword", keyword.trim());
+    }
+
+    if (location.trim()) {
+      params.set("location", location.trim());
+    }
+
+    navigate(`/jobs?${params.toString()}`);
+
+    setLoading(false);
   };
 
   return (
-    <div className="bg-white shadow-md rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center">
+    <form
+      onSubmit={handleSearch}
+      className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 p-3"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
-      {/* Keyword */}
-      <input
-        type="text"
-        placeholder="Job title or keyword..."
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        className="w-full md:w-1/2 border p-2 rounded-lg focus:outline-blue-500"
-      />
+        {/* Keyword */}
 
-      {/* Location */}
-      <input
-        type="text"
-        placeholder="Location..."
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        className="w-full md:w-1/3 border p-2 rounded-lg focus:outline-blue-500"
-      />
+        <div className="relative">
+          <Search
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          />
 
-      {/* Search Button */}
-      <button
-        onClick={handleSearch}
-        className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-      >
-        Search
-      </button>
+          <input
+            type="text"
+            placeholder="Job title, skills..."
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            className="w-full border rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-    </div>
+        {/* Location */}
+
+        <div className="relative">
+          <MapPin
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+
+          <input
+            type="text"
+            placeholder="Location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full border rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Button */}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition disabled:opacity-70"
+        >
+          {loading ? "Searching..." : "Search Jobs"}
+        </button>
+
+      </div>
+    </form>
   );
 };
 

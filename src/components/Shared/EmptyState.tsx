@@ -1,48 +1,75 @@
-import { FC } from "react";
+import React, { FC, ReactNode } from "react";
+import Button from "../Shared/Button";
 
-interface Props {
+interface EmptyStateProps {
   title?: string;
   description?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
+
   actionText?: string;
-  onAction?: () => void;
+  onAction?: (data?: unknown) => void;
+  actionData?: unknown;
+
+  secondaryActionText?: string;
+  onSecondaryAction?: () => void;
+
+  className?: string;
 }
 
-const EmptyState: FC<Props> = ({
+const EmptyState: FC<EmptyStateProps> = ({
   title = "No Data Found",
-  description = "There is nothing to show here right now.",
+  description = "There is nothing to display right now.",
   icon,
+
   actionText,
   onAction,
+  actionData,
+
+  secondaryActionText,
+  onSecondaryAction,
+
+  className = "",
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center text-center p-10 bg-white rounded-xl shadow">
-      
-      {/* Icon */}
+    <div
+      className={`bg-white border border-gray-200 rounded-2xl shadow-sm p-10 text-center ${className}`}
+    >
       {icon && (
-        <div className="text-gray-400 text-5xl mb-4">
+        <div className="flex justify-center text-6xl text-gray-300 mb-6">
           {icon}
         </div>
       )}
 
-      {/* Title */}
-      <h2 className="text-xl font-semibold text-gray-700">
+      <h2 className="text-2xl font-bold text-gray-800">
         {title}
       </h2>
 
-      {/* Description */}
-      <p className="text-gray-500 mt-2 text-sm max-w-md">
+      <p className="mt-3 text-gray-500 max-w-md mx-auto">
         {description}
       </p>
 
-      {/* Action Button */}
-      {actionText && onAction && (
-        <button
-          onClick={onAction}
-          className="mt-5 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          {actionText}
-        </button>
+      {(actionText || secondaryActionText) && (
+        <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+
+          {actionText && onAction && (
+            <Button
+              variant="primary"
+              onClick={() => onAction(actionData)}
+            >
+              {actionText}
+            </Button>
+          )}
+
+          {secondaryActionText && onSecondaryAction && (
+            <Button
+              variant="outline"
+              onClick={onSecondaryAction}
+            >
+              {secondaryActionText}
+            </Button>
+          )}
+
+        </div>
       )}
     </div>
   );

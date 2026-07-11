@@ -1,17 +1,58 @@
-import { Navigate, Outlet } from "react-router-dom";
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-interface Props {
+import { useAuth } from "../../context/AuthContext";
+import Loader from "../Shared/Loader";
+
+interface ProtectedRouteProps {
+  allowedRoles?: ("jobseeker" | "employer" | "admin")[];
   redirectPath?: string;
 }
 
-const ProtectedRoute = ({ redirectPath = "/login" }: Props) => {
-  // Example: token stored in localStorage
-  const token = localStorage.getItem("token");
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  allowedRoles,
+  redirectPath = "/login",
+}) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-  if (!token) {
-    return <Navigate to={redirectPath} replace />;
+  // Wait until authentication is initialized
+  if (loading) {
+    return (
+      <Loader
+        fullScreen
+        text="Verifying your session..."
+      />
+    );
   }
 
+  // Not logged in
+  if (!user) {
+    return (
+      <Navigate
+        to={redirectPath}
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
+  // Logged in but doesn't have the required role
+  if (
+    allowedRoles &&
+    !allowedRoles.includes(
+      user.role as "jobseeker" | "employer" | "admin"
+    )
+  ) {
+    return (
+      <Navigate
+        to="/unauthorized"
+        replace
+      />
+    );
+  }
+
+  // Authorized
   return <Outlet />;
 };
 

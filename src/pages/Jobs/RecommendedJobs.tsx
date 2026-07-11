@@ -1,125 +1,74 @@
+import { useEffect, useState } from "react";
+import { Sparkles, RefreshCw } from "lucide-react";
+import axiosInstance from "../../api/axios";
 import JobCard from "../../components/Jobs/JobCard";
-
-interface Job {
-  _id: string;
-  title: string;
-  company: string;
-  description: string;
-  location: string;
-  salary: string;
-  jobType: string;
-}
+import JobSkeleton from "../../components/Jobs/JobSkeleton";
 
 const RecommendedJobs = () => {
-  const recommendedJobs: Job[] = [
-    {
-      _id: "1",
-      title: "Frontend Developer",
-      company: "Google",
-      description:
-        "Develop modern web applications using React, TypeScript, and Tailwind CSS.",
-      location: "Remote",
-      salary: "₹12 LPA",
-      jobType: "Full Time",
-    },
-    {
-      _id: "2",
-      title: "Backend Developer",
-      company: "Microsoft",
-      description:
-        "Build scalable REST APIs with Node.js, Express, and MongoDB.",
-      location: "Bangalore",
-      salary: "₹15 LPA",
-      jobType: "Full Time",
-    },
-    {
-      _id: "3",
-      title: "MERN Stack Developer",
-      company: "Infosys",
-      description:
-        "Work on enterprise-level MERN applications and cloud deployment.",
-      location: "Pune",
-      salary: "₹10 LPA",
-      jobType: "Hybrid",
-    },
-    {
-      _id: "4",
-      title: "UI/UX Designer",
-      company: "Amazon",
-      description:
-        "Design intuitive user experiences and responsive interfaces.",
-      location: "Chennai",
-      salary: "₹9 LPA",
-      jobType: "Hybrid",
-    },
-    {
-      _id: "5",
-      title: "Data Analyst",
-      company: "TCS",
-      description:
-        "Analyze large datasets and create business intelligence reports.",
-      location: "Hyderabad",
-      salary: "₹8 LPA",
-      jobType: "Remote",
-    },
-    {
-      _id: "6",
-      title: "DevOps Engineer",
-      company: "Wipro",
-      description:
-        "Manage CI/CD pipelines, Docker containers, and cloud infrastructure.",
-      location: "Bangalore",
-      salary: "₹14 LPA",
-      jobType: "Full Time",
-    },
-  ];
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, []);
+
+  const fetchRecommendations = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axiosInstance.get("/recommendations/jobs");
+      setJobs(data.data || []);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
+    <div className="max-w-7xl mx-auto px-6 py-12">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold text-gray-800">
-          Recommended Jobs
-        </h1>
+      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-black text-slate-950 tracking-tighter">Recommended For You</h1>
+          <p className="text-slate-500 mt-2 font-medium">Curated opportunities matched to your skill profile.</p>
+        </div>
+        <button 
+          onClick={fetchRecommendations}
+          className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-700 hover:border-blue-600 hover:text-blue-600 transition"
+        >
+          <RefreshCw size={16} /> Refresh
+        </button>
+      </header>
 
-        <p className="text-gray-500 mt-2">
-          Personalized job recommendations based on your profile and skills.
-        </p>
-      </div>
-
-      {/* Recommendations Banner */}
-      <div className="bg-blue-600 text-white rounded-xl p-6 mb-8">
-        <h2 className="text-2xl font-semibold">
-          Jobs Matching Your Skills
-        </h2>
-
-        <p className="mt-2">
-          We've selected these opportunities based on your experience,
-          interests, and recent activity.
-        </p>
-      </div>
-
-      {/* Jobs Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {recommendedJobs.map((job) => (
-          <JobCard
-            key={job._id}
-            job={job}
-          />
-        ))}
-      </div>
-
-      {/* Empty State Example */}
-      {recommendedJobs.length === 0 && (
-        <div className="bg-white rounded-xl shadow-md p-10 text-center">
-          <h2 className="text-2xl font-semibold text-gray-700">
-            No Recommendations Available
-          </h2>
-
-          <p className="text-gray-500 mt-2">
-            Complete your profile and upload your resume to get personalized
-            recommendations.
+      {/* AI Banner */}
+      <div className="relative bg-slate-950 text-white rounded-3xl p-10 mb-10 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)]" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-widest mb-3">
+            <Sparkles size={16} /> AI-Powered Matching
+          </div>
+          <h2 className="text-3xl font-black tracking-tight">Smart Career Insights</h2>
+          <p className="text-slate-400 mt-2 max-w-xl">
+            Our algorithms analyze your experience and preferences to surface the positions where you have the highest probability of an interview.
           </p>
+        </div>
+      </div>
+
+      {/* Grid Content */}
+      {loading ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => <JobSkeleton key={i} />)}
+        </div>
+      ) : jobs.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {jobs.map((job) => (
+            <JobCard key={job._id} job={job} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+          <h3 className="text-xl font-black text-slate-900">No matches found yet</h3>
+          <p className="text-slate-500 mt-2">Try updating your skills or profile to see better results.</p>
         </div>
       )}
     </div>

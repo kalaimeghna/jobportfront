@@ -1,128 +1,36 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import API from "../../api/axios";
+import { Job, JobsResponse } from "../../types/job.types";
 
-// ==========================
-// CREATE JOB (Recruiter)
-// ==========================
-export const createJob = createAsyncThunk(
-  "job/createJob",
-  async (
-    jobData: {
-      title: string;
-      description: string;
-      location?: string;
-      salary?: string;
-      type?: "full-time" | "part-time" | "internship";
-      companyId: string;
-    },
-    { rejectWithValue }
-  ) => {
+export const fetchJobs = createAsyncThunk<
+  Job[],
+  string | undefined,
+  { rejectValue: string }
+>(
+  "jobs/fetchAll",
+  async (keyword = "", { rejectWithValue }) => {
     try {
-      const { data } = await API.post("/jobs", jobData);
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Job creation failed"
-      );
-    }
-  }
-);
+      const url = keyword
+        ? `/api/jobs?keyword=${encodeURIComponent(keyword)}`
+        : "/api/jobs";
 
-// ==========================
-// GET ALL JOBS (PUBLIC)
-// ==========================
-export const fetchJobs = createAsyncThunk(
-  "job/fetchJobs",
-  async (_, { rejectWithValue }) => {
-    try {
-      const { data } = await API.get("/jobs");
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch jobs"
-      );
-    }
-  }
-);
+      const response = await fetch(url);
 
-// ==========================
-// GET SINGLE JOB BY ID
-// ==========================
-export const fetchJobById = createAsyncThunk(
-  "job/fetchJobById",
-  async (id: string, { rejectWithValue }) => {
-    try {
-      const { data } = await API.get(`/jobs/${id}`);
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch job"
-      );
-    }
-  }
-);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: Failed to fetch jobs`);
+      }
 
-// ==========================
-// GET MY JOBS (Recruiter)
-// ==========================
-export const fetchMyJobs = createAsyncThunk(
-  "job/fetchMyJobs",
-  async (_, { rejectWithValue }) => {
-    try {
-      const { data } = await API.get("/jobs/my-jobs");
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch your jobs"
-      );
-    }
-  }
-);
+      const result: JobsResponse = await response.json();
 
-// ==========================
-// UPDATE JOB
-// ==========================
-export const updateJob = createAsyncThunk(
-  "job/updateJob",
-  async (
-    {
-      id,
-      updatedData,
-    }: {
-      id: string;
-      updatedData: {
-        title?: string;
-        description?: string;
-        location?: string;
-        salary?: string;
-        type?: "full-time" | "part-time" | "internship";
-      };
-    },
-    { rejectWithValue }
-  ) => {
-    try {
-      const { data } = await API.put(`/jobs/${id}`, updatedData);
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Job update failed"
-      );
-    }
-  }
-);
+      if (!result.success) {
+        throw new Error(result.message ?? "Failed to fetch jobs");
+      }
 
-// ==========================
-// DELETE JOB
-// ==========================
-export const deleteJob = createAsyncThunk(
-  "job/deleteJob",
-  async (id: string, { rejectWithValue }) => {
-    try {
-      const { data } = await API.delete(`/jobs/${id}`);
-      return { id, ...data };
-    } catch (error: any) {
+      return result.data;
+    } catch (err) {
       return rejectWithValue(
-        error.response?.data?.message || "Job deletion failed"
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred"
       );
     }
   }

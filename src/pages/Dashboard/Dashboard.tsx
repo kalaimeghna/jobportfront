@@ -1,172 +1,112 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  FaBriefcase,
-  FaUsers,
-  FaBuilding,
-  FaChartLine,
-} from "react-icons/fa";
+import { FaBriefcase, FaUsers, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { Loader2 } from "lucide-react";
+import axiosInstance from "../../api/axios";
 
-const Dashboard = () => {
-  const stats = [
-    {
-      title: "Total Jobs",
-      value: 24,
-      icon: <FaBriefcase size={24} />,
-      color: "bg-blue-500",
-      link: "/dashboard/jobs",
-    },
-    {
-      title: "Applications",
-      value: 156,
-      icon: <FaUsers size={24} />,
-      color: "bg-green-500",
-      link: "/dashboard/ats",
-    },
-    {
-      title: "Companies",
-      value: 8,
-      icon: <FaBuilding size={24} />,
-      color: "bg-purple-500",
-      link: "/companies",
-    },
-    {
-      title: "Analytics",
-      value: "View",
-      icon: <FaChartLine size={24} />,
-      color: "bg-orange-500",
-      link: "/dashboard/analytics",
-    },
-  ];
+// --- Types ---
+interface RecentApplication {
+  _id: string;
+  name: string;
+  jobTitle: string;
+  status: "pending" | "accepted" | "rejected" | "reviewed" | "interview";
+}
+
+interface DashboardData {
+  totalApplications: number;
+  pendingCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  recentApplications: RecentApplication[];
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  accepted: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  rejected: "bg-rose-50 text-rose-700 border-rose-100",
+  pending: "bg-amber-50 text-amber-700 border-amber-100",
+  reviewed: "bg-blue-50 text-blue-700 border-blue-100",
+  interview: "bg-purple-50 text-purple-700 border-purple-100",
+  default: "bg-slate-50 text-slate-600 border-slate-100",
+};
+
+const Dashboard: React.FC = () => {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get("/analytics/metrics");
+        setData(response.data);
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <div className="min-h-[40vh] flex items-center justify-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
+  if (error) return <div className="p-8 bg-rose-50 text-rose-700 rounded-xl">{error}</div>;
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Dashboard
-        </h1>
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+      <header>
+        <h1 className="text-3xl font-black text-slate-950">Dashboard</h1>
+        <p className="text-slate-500">Welcome back! Here is your hiring metrics overview.</p>
+      </header>
 
-        <p className="text-gray-500 mt-2">
-          Welcome back! Here's an overview of your job portal.
-        </p>
-      </div>
-
-      {/* Stats Cards */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Link
-            key={index}
-            to={stat.link}
-            className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition"
-          >
-            <div
-              className={`${stat.color} text-white w-12 h-12 rounded-lg flex items-center justify-center`}
-            >
+        {[
+          { title: "Total Applications", val: data?.totalApplications || 0, icon: <FaUsers />, color: "bg-indigo-500" },
+          { title: "Pending Review", val: data?.pendingCount || 0, icon: <FaBriefcase />, color: "bg-amber-500" },
+          { title: "Accepted", val: data?.acceptedCount || 0, icon: <FaCheckCircle />, color: "bg-emerald-500" },
+          { title: "Rejected", val: data?.rejectedCount || 0, icon: <FaTimesCircle />, color: "bg-rose-500" },
+        ].map((stat, i) => (
+          <Link key={i} to="/dashboard/applicants" className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition">
+            <div className={`${stat.color} text-white w-12 h-12 rounded-2xl flex items-center justify-center mb-4`}>
               {stat.icon}
             </div>
-
-            <h3 className="mt-4 text-gray-500">
-              {stat.title}
-            </h3>
-
-            <p className="text-3xl font-bold text-gray-800">
-              {stat.value}
-            </p>
+            <h3 className="text-slate-500 text-xs font-bold uppercase">{stat.title}</h3>
+            <p className="text-3xl font-black">{stat.val}</p>
           </Link>
         ))}
       </div>
 
-      {/* Recent Jobs */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">
-          Recent Jobs
-        </h2>
-
-        <div className="space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-medium">
-              Frontend Developer
-            </h3>
-
-            <p className="text-sm text-gray-500">
-              Remote • Full Time
-            </p>
-          </div>
-
-          <div className="border-b pb-3">
-            <h3 className="font-medium">
-              Backend Developer
-            </h3>
-
-            <p className="text-sm text-gray-500">
-              Bangalore • Full Time
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-medium">
-              UI/UX Designer
-            </h3>
-
-            <p className="text-sm text-gray-500">
-              Chennai • Hybrid
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Applications */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">
-          Recent Applications
-        </h2>
-
+      {/* Recent Applications Table */}
+      <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm overflow-hidden">
+        <h2 className="text-xl font-black mb-6">Recent Applications</h2>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b">
-                <th className="text-left py-3">
-                  Candidate
-                </th>
-                <th className="text-left py-3">
-                  Position
-                </th>
-                <th className="text-left py-3">
-                  Status
-                </th>
+              <tr className="text-slate-400 text-xs uppercase font-bold border-b border-slate-100">
+                <th className="py-3 text-left">Candidate</th>
+                <th className="py-3 text-left">Position</th>
+                <th className="py-3 text-left">Status</th>
               </tr>
             </thead>
-
             <tbody>
-              <tr className="border-b">
-                <td className="py-3">John Doe</td>
-                <td>Frontend Developer</td>
-                <td>
-                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
-                    Pending
-                  </span>
-                </td>
-              </tr>
-
-              <tr className="border-b">
-                <td className="py-3">Jane Smith</td>
-                <td>Backend Developer</td>
-                <td>
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                    Accepted
-                  </span>
-                </td>
-              </tr>
-
-              <tr>
-                <td className="py-3">Alex Johnson</td>
-                <td>UI/UX Designer</td>
-                <td>
-                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
-                    Rejected
-                  </span>
-                </td>
-              </tr>
+              {data?.recentApplications && data.recentApplications.length > 0 ? (
+                data.recentApplications.map((app) => (
+                  <tr key={app._id} className="border-t border-slate-50 hover:bg-slate-50 transition">
+                    <td className="py-4 font-bold text-slate-800">{app.name}</td>
+                    <td className="py-4 text-slate-600">{app.jobTitle}</td>
+                    <td className="py-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${STATUS_STYLES[app.status] || STATUS_STYLES.default}`}>
+                        {app.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="py-10 text-center text-slate-400">No recent applications found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

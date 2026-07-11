@@ -1,65 +1,87 @@
-import { FC } from "react";
+import React from "react";
 
-interface Props {
+interface JobFilterProps {
   search: string;
   location: string;
-  type: string;
+  jobType: string;
+  workMode: string;
+
   onSearchChange: (value: string) => void;
   onLocationChange: (value: string) => void;
-  onTypeChange: (value: string) => void;
+  onJobTypeChange: (value: string) => void;
+  onWorkModeChange: (value: string) => void;
+
   onReset: () => void;
 }
 
-const JobFilter: FC<Props> = ({
+const JobFilter: React.FC<JobFilterProps> = ({
   search,
   location,
-  type,
+  jobType,
+  workMode,
   onSearchChange,
   onLocationChange,
-  onTypeChange,
+  onJobTypeChange,
+  onWorkModeChange,
   onReset,
 }) => {
   return (
-    <div className="bg-white shadow rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
 
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search job title..."
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="w-full md:w-1/3 border p-2 rounded-lg focus:outline-blue-500"
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 
-      {/* Location */}
-      <input
-        type="text"
-        placeholder="Location..."
-        value={location}
-        onChange={(e) => onLocationChange(e.target.value)}
-        className="w-full md:w-1/3 border p-2 rounded-lg focus:outline-blue-500"
-      />
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search jobs..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
-      {/* Type */}
-      <select
-        value={type}
-        onChange={(e) => onTypeChange(e.target.value)}
-        className="w-full md:w-1/4 border p-2 rounded-lg focus:outline-blue-500"
-      >
-        <option value="">All Types</option>
-        <option value="full-time">Full-Time</option>
-        <option value="part-time">Part-Time</option>
-        <option value="internship">Internship</option>
-      </select>
+        {/* Location */}
+        <input
+          type="text"
+          placeholder="Location"
+          value={location}
+          onChange={(e) => onLocationChange(e.target.value)}
+          className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
-      {/* Reset */}
-      <button
-        onClick={onReset}
-        className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-      >
-        Reset
-      </button>
+        {/* Job Type */}
+        <select
+          value={jobType}
+          onChange={(e) => onJobTypeChange(e.target.value)}
+          className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Job Types</option>
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contract">Contract</option>
+          <option value="Internship">Internship</option>
+        </select>
 
+        {/* Work Mode */}
+        <select
+          value={workMode}
+          onChange={(e) => onWorkModeChange(e.target.value)}
+          className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Work Modes</option>
+          <option value="On-site">On-site</option>
+          <option value="Hybrid">Hybrid</option>
+          <option value="Remote">Remote</option>
+        </select>
+
+        {/* Reset */}
+        <button
+          onClick={onReset}
+          className="bg-gray-900 hover:bg-blue-600 text-white rounded-xl px-5 py-3 font-semibold transition"
+        >
+          Reset Filters
+        </button>
+
+      </div>
     </div>
   );
 };

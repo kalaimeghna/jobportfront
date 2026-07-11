@@ -1,11 +1,14 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/axios";
+import { User, Mail, Lock, Loader2 } from "lucide-react";
 
 type Role = "jobseeker" | "employer";
 
-const Register = () => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -18,256 +21,112 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setError(null);
-
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
-    // Validation
-    if (!formData.name.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-
-    if (!formData.email.trim()) {
-      setError("Please enter your email.");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+      return setError("Passwords do not match.");
     }
 
     try {
       setLoading(true);
-
-      const payload = {
+      const { data } = await axiosInstance.post("/auth/register", {
         name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email.toLowerCase(),
         password: formData.password,
         role: formData.role,
+      });
+
+      const { user, token } = data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      await login(user, token);
+
+      const redirects: Record<string, string> = {
+        employer: "/dashboard",
+        jobseeker: "/jobs",
+        admin: "/admin/dashboard",
       };
 
-      console.log("Sending Payload:", payload);
-
-      const response = await axiosInstance.post(
-        "/api/auth/register",
-        payload
-      );
-
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-
-      if (response.data?.user) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify(response.data.user)
-        );
-      }
-
-      navigate("/dashboard");
+      navigate(redirects[user.role] || "/", { replace: true });
     } catch (err: any) {
-      console.error("Register Error:", err);
-
-      setError(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Registration failed. Please try again."
-      );
+      setError(err.response?.data?.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-100 px-4 py-10">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Create Account
-          </h1>
-
-          <p className="text-gray-500 mt-2">
-            Join us and find your dream job
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden grid lg:grid-cols-2">
+        {/* Branding */}
+        <div className="hidden lg:flex flex-col justify-center bg-blue-600 text-white p-16">
+          <h1 className="text-4xl font-black mb-6">CareerHub</h1>
+          <p className="text-blue-100 text-lg leading-relaxed">
+            Join a thriving ecosystem of professionals and companies. Build your future, one application at a time.
           </p>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
-
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
-            </label>
-
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
-
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Register As
-            </label>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              {(["jobseeker", "employer"] as Role[]).map((role) => (
-
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      role,
-                    }))
-                  }
-                  className={`rounded-lg border py-3 font-medium transition ${
-                    formData.role === role
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white border-gray-300 hover:border-blue-500"
-                  }`}
-                >
-                  {role === "jobseeker"
-                    ? "Job Seeker"
-                    : "Employer"}
-                </button>
-
-              ))}
-
+        {/* Form */}
+        <div className="p-10 md:p-14">
+          <h2 className="text-2xl font-black text-slate-950">Create Account</h2>
+          {error && (
+            <div className="mt-6 p-4 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-100">
+              {error}
             </div>
-          </div>
+          )}
 
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <InputField label="Full Name" name="name" icon={<User size={18} />} value={formData.name} onChange={handleChange} placeholder="John Doe" />
+            <InputField label="Email Address" name="email" type="email" icon={<Mail size={18} />} value={formData.email} onChange={handleChange} placeholder="name@example.com" />
 
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Minimum 6 characters"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Role</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(["jobseeker", "employer"] as Role[]).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, role }))}
+                    className={`py-3 rounded-xl font-bold capitalize transition ${formData.role === role ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password
-            </label>
+            <InputField label="Password" name="password" type="password" icon={<Lock size={18} />} value={formData.password} onChange={handleChange} placeholder="••••••••" />
+            <InputField label="Confirm Password" name="confirmPassword" type="password" icon={<Lock size={18} />} value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••" />
 
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Re-enter password"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <button disabled={loading} className="w-full bg-slate-950 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2">
+              {loading && <Loader2 className="animate-spin" size={18} />}
+              {loading ? "Registering..." : "Complete Registration"}
+            </button>
+          </form>
 
-            {formData.confirmPassword && (
-              <p
-                className={`mt-2 text-sm ${
-                  formData.password === formData.confirmPassword
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {formData.password === formData.confirmPassword
-                  ? "✓ Passwords match"
-                  : "✗ Passwords do not match"}
-              </p>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Creating Account..." : "Create Account"}
-          </button>
-                  </form>
-
-        {/* Login Link */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
-            >
-              Login
-            </Link>
+          <p className="text-center text-sm text-slate-600 mt-6">
+            Already have an account? <Link to="/login" className="ml-1 text-blue-600 font-bold hover:underline">Login</Link>
           </p>
         </div>
-
       </div>
     </div>
   );
 };
+
+const InputField = ({ label, name, type = "text", icon, value, onChange, placeholder }: any) => (
+  <div className="space-y-1.5">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+    <div className="relative">
+      <div className="absolute left-4 top-3.5 text-slate-400">{icon}</div>
+      <input name={name} type={type} required value={value} onChange={onChange} placeholder={placeholder} className="w-full pl-11 p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
+    </div>
+  </div>
+);
 
 export default Register;

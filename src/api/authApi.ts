@@ -1,8 +1,16 @@
 import axiosInstance from "./axios";
 
 /* ============================
-   TYPES
+    TYPES
 ============================ */
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  token?: string;
+  user?: T;
+}
 
 export interface RegisterData {
   name: string;
@@ -29,103 +37,94 @@ export interface ResetPasswordData {
   password: string;
 }
 
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: "jobseeker" | "employer" | "admin";
+  phone?: string;
+  location?: string;
+  headline?: string;
+  profilePicture?: string;
+}
+
 /* ============================
-   AUTH APIs
+    AUTH API SERVICES
 ============================ */
 
-// Register User
-export const registerUser = async (
-  data: RegisterData
-) => {
-  const response = await axiosInstance.post(
-    "/auth/register",
-    data
-  );
-
+/**
+ * Register a new user
+ */
+export const registerUser = async (data: RegisterData): Promise<ApiResponse<User>> => {
+  const response = await axiosInstance.post("/auth/register", data);
   return response.data;
 };
 
-// Login User
-export const loginUser = async (
-  data: LoginData
-) => {
-  const response = await axiosInstance.post(
-    "/auth/login",
-    data
-  );
+/**
+ * Login user and persist token/user data to localStorage
+ */
+export const loginUser = async (data: LoginData): Promise<ApiResponse<User>> => {
+  const response = await axiosInstance.post("/auth/login", data);
 
   if (response.data.token) {
-    localStorage.setItem(
-      "token",
-      response.data.token
-    );
+    localStorage.setItem("token", response.data.token);
+  }
+  if (response.data.user) {
+    localStorage.setItem("user", JSON.stringify(response.data.user));
   }
 
   return response.data;
 };
 
-// Logout User
-export const logoutUser = async () => {
-  localStorage.removeItem("token");
+/**
+ * Logout user and clear local storage
+ */
+export const logoutUser = async (): Promise<ApiResponse> => {
+  try {
+    const response = await axiosInstance.get("/auth/logout");
+    return response.data;
+  } finally {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  }
+};
 
-  const response = await axiosInstance.post(
-    "/auth/logout"
-  );
+/**
+ * Fetch the currently authenticated user
+ */
+export const getMe = async (): Promise<User> => {
+  const response = await axiosInstance.get("/auth/me");
+  return response.data.data;
+};
 
+/**
+ * Request a password reset email
+ */
+export const forgotPassword = async (data: ForgotPasswordData): Promise<ApiResponse> => {
+  const response = await axiosInstance.post("/auth/forgot-password", data);
   return response.data;
 };
 
-// Get Current User
-export const getCurrentUser = async () => {
-  const response = await axiosInstance.get(
-    "/auth/me"
-  );
-
+/**
+ * Reset password using a token
+ */
+export const resetPassword = async (token: string, data: ResetPasswordData): Promise<ApiResponse> => {
+  const response = await axiosInstance.put(`/auth/reset-password/${token}`, data);
   return response.data;
 };
 
-// Forgot Password
-export const forgotPassword = async (
-  data: ForgotPasswordData
-) => {
-  const response = await axiosInstance.post(
-    "/auth/forgot-password",
-    data
-  );
-
+/**
+ * Change authenticated user's password
+ */
+export const changePassword = async (data: ChangePasswordData): Promise<ApiResponse> => {
+  const response = await axiosInstance.put("/auth/change-password", data);
   return response.data;
 };
 
-// Reset Password
-export const resetPassword = async (
-  token: string,
-  data: ResetPasswordData
-) => {
-  const response = await axiosInstance.post(
-    `/auth/reset-password/${token}`,
-    data
-  );
-
-  return response.data;
-};
-
-// Change Password
-export const changePassword = async (
-  data: ChangePasswordData
-) => {
-  const response = await axiosInstance.put(
-    "/auth/change-password",
-    data
-  );
-
-  return response.data;
-};
-
-// Refresh User Profile
-export const refreshUser = async () => {
-  const response = await axiosInstance.get(
-    "/auth/me"
-  );
-
+/**
+ * Update authenticated user's profile details
+ */
+export const updateProfile = async (data: Partial<User>): Promise<ApiResponse<User>> => {
+  const response = await axiosInstance.put("/auth/me", data);
   return response.data;
 };

@@ -1,82 +1,105 @@
-import axiosInstance from "./axios";
+import axiosInstance, { axiosFormData } from "./axios";
 
-export interface ApplyJobData {
-  resume: string;
-  coverLetter: string;
+/* ===========================
+   TYPES
+=========================== */
+
+export interface Application {
+  _id: string;
+  job: any;
+  applicant: any;
+  resumeUrl: string;
+  coverLetterUrl?: string;
+  status: "pending" | "reviewed" | "interview" | "accepted" | "rejected";
+  createdAt: string;
 }
 
 export interface UpdateStatusData {
-  status:
-    | "pending"
-    | "shortlisted"
-    | "accepted"
-    | "rejected";
+  status: Application["status"];
 }
 
-// Apply for a job
+/* ===========================
+   APPLY FOR A JOB
+=========================== */
+
 export const applyJob = async (
   jobId: string,
-  data: ApplyJobData
-) => {
-  const response = await axiosInstance.post(
+  file: File,
+  coverLetter?: string
+): Promise<{ message: string; application: Application }> => {
+  const formData = new FormData();
+
+  formData.append("resume", file);
+
+  if (coverLetter) {
+    formData.append("coverLetter", coverLetter);
+  }
+
+  const { data } = await axiosFormData.post(
     `/applications/apply/${jobId}`,
-    data
+    formData
   );
 
-  return response.data;
+  return data;
 };
 
-// Get logged-in user's applications
-export const getMyApplications = async () => {
-  const response = await axiosInstance.get(
-    "/applications/my"
+/* ===========================
+   GET MY APPLICATIONS
+=========================== */
+
+export const getMyApplications = async (): Promise<Application[]> => {
+  const { data } = await axiosInstance.get("/applications/my");
+  return data.data;
+};
+
+/* ===========================
+   GET EMPLOYER APPLICATIONS
+=========================== */
+
+export const getEmployerApplications = async (): Promise<Application[]> => {
+  const { data } = await axiosInstance.get(
+    "/applications/employer/dashboard"
   );
 
-  return response.data;
+  return data.data;
 };
 
-// Get applicants for a specific job
+/* ===========================
+   GET APPLICATIONS FOR A JOB
+=========================== */
+
 export const getJobApplicants = async (
   jobId: string
-) => {
-  const response = await axiosInstance.get(
+): Promise<Application[]> => {
+  const { data } = await axiosInstance.get(
     `/applications/job/${jobId}`
   );
 
-  return response.data;
+  return data.data;
 };
 
-// Update application status
+/* ===========================
+   UPDATE APPLICATION STATUS
+=========================== */
+
 export const updateApplicationStatus = async (
   applicationId: string,
-  data: UpdateStatusData
-) => {
-  const response = await axiosInstance.put(
+  status: UpdateStatusData
+): Promise<Application> => {
+  const { data } = await axiosInstance.patch(
     `/applications/${applicationId}/status`,
-    data
+    status
   );
 
-  return response.data;
+  return data.data;
 };
 
-// Get application by id
-export const getApplicationById = async (
-  applicationId: string
-) => {
-  const response = await axiosInstance.get(
-    `/applications/${applicationId}`
-  );
+/* ===========================
+   DELETE APPLICATION
+=========================== */
 
-  return response.data;
-};
-
-// Delete application
 export const deleteApplication = async (
   applicationId: string
-) => {
-  const response = await axiosInstance.delete(
-    `/applications/${applicationId}`
-  );
-
-  return response.data;
+): Promise<void> => {
+  await axiosInstance.delete(`/applications/${applicationId}`);
 };

@@ -1,35 +1,57 @@
-import { FC } from "react";
+import React, { FC } from "react";
 
-interface Props {
+interface LoaderProps {
   size?: "sm" | "md" | "lg";
   text?: string;
   fullScreen?: boolean;
+  className?: string;
 }
 
-const Loader: FC<Props> = ({
+const Loader: FC<LoaderProps> = ({
   size = "md",
   text = "Loading...",
   fullScreen = false,
+  className = "",
 }) => {
-  const sizeMap = {
-    sm: "h-6 w-6",
-    md: "h-10 w-10",
-    lg: "h-14 w-14",
+  const sizes = {
+    sm: "h-5 w-5 border-2",
+    md: "h-10 w-10 border-4",
+    lg: "h-14 w-14 border-4",
   };
 
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-3 ${
-        fullScreen ? "h-screen" : "py-10"
-      }`}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className={`
+        flex flex-col items-center justify-center gap-4
+        ${
+          fullScreen
+            ? "fixed inset-0 z-50 bg-white/80 backdrop-blur-sm"
+            : "py-10"
+        }
+        ${className}
+      `}
     >
-      {/* Spinner */}
       <div
-        className={`border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin ${sizeMap[size]}`}
-      ></div>
+        className={`
+          ${sizes[size]}
+          rounded-full
+          border
+          border-gray-200
+          border-t-blue-600
+          animate-spin
+        `}
+      />
 
-      {/* Text */}
-      {text && <p className="text-gray-500 text-sm">{text}</p>}
+      {text && (
+        <p className="text-sm font-medium text-gray-500">
+          {text}
+        </p>
+      )}
+
+      <span className="sr-only">Loading...</span>
     </div>
   );
 };

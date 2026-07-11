@@ -1,19 +1,7 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-export interface Company {
-  _id: string;
-  companyName: string;
-  description: string;
-  logo?: string;
-  location: string;
-}
-
-interface CompanyState {
-  companies: Company[];
-  company: Company | null;
-  loading: boolean;
-  error: string | null;
-}
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Company, CompanyState } from '../../types/company.types';
+// Note: You will need to import your thunks (e.g., fetchCompanyById, updateCompany)
+import { fetchCompanyById, updateCompany } from '../../redux/company/companyThunk'; 
 
 const initialState: CompanyState = {
   companies: [],
@@ -23,67 +11,49 @@ const initialState: CompanyState = {
 };
 
 const companySlice = createSlice({
-  name: "company",
+  name: 'company',
   initialState,
-
   reducers: {
-    setCompanies: (state, action: PayloadAction<Company[]>) => {
-      state.companies = action.payload;
+    // Synchronous action to reset error
+    clearCompanyError: (state) => {
+      state.error = null;
     },
-
+    // Synchronous action to manually set company data
     setCompany: (state, action: PayloadAction<Company>) => {
       state.company = action.payload;
     },
-
-    addCompany: (state, action: PayloadAction<Company>) => {
-      state.companies.push(action.payload);
-    },
-
-    updateCompany: (state, action: PayloadAction<Company>) => {
-      state.companies = state.companies.map((company) =>
-        company._id === action.payload._id
-          ? action.payload
-          : company
-      );
-
-      if (state.company?._id === action.payload._id) {
+  },
+  extraReducers: (builder) => {
+    builder
+      // --- Handle Fetching Company ---
+      .addCase(fetchCompanyById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCompanyById.fulfilled, (state, action: PayloadAction<Company>) => {
+        state.loading = false;
         state.company = action.payload;
-      }
-    },
+      })
+      .addCase(fetchCompanyById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string ?? 'Failed to load company';
+      })
 
-    deleteCompany: (state, action: PayloadAction<string>) => {
-      state.companies = state.companies.filter(
-        (company) => company._id !== action.payload
-      );
-
-      if (state.company?._id === action.payload) {
-        state.company = null;
-      }
-    },
-
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
-    },
-
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-    },
-
-    clearCompany: (state) => {
-      state.company = null;
-    },
+      // --- Handle Updating Company ---
+      .addCase(updateCompany.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCompany.fulfilled, (state, action: PayloadAction<Company>) => {
+        state.loading = false;
+        state.company = action.payload; // Update the current view
+      })
+      .addCase(updateCompany.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string ?? 'Failed to update company';
+      });
   },
 });
 
-export const {
-  setCompanies,
-  setCompany,
-  addCompany,
-  updateCompany,
-  deleteCompany,
-  setLoading,
-  setError,
-  clearCompany,
-} = companySlice.actions;
-
+export const { clearCompanyError, setCompany } = companySlice.actions;
 export default companySlice.reducer;

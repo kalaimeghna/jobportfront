@@ -1,190 +1,106 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axiosInstance from "../../api/axios";
+import { Loader2, CheckCircle2, XCircle, User, Briefcase } from "lucide-react";
 
-interface Applicant {
+interface ApplicationData {
   _id: string;
-  name: string;
-  email: string;
-  jobTitle: string;
-  resume: string;
-  status: "Pending" | "Accepted" | "Rejected";
+  job: { _id: string; title: string } | null;
+  applicant: { _id: string; name: string; email: string } | null;
+  status: "pending" | "reviewed" | "interview" | "accepted" | "rejected";
 }
 
 const Applicants = () => {
-  const [applicants, setApplicants] = useState<Applicant[]>([
-    {
-      _id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      jobTitle: "Frontend Developer",
-      resume: "#",
-      status: "Pending",
-    },
-    {
-      _id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      jobTitle: "Backend Developer",
-      resume: "#",
-      status: "Accepted",
-    },
-    {
-      _id: "3",
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      jobTitle: "UI/UX Designer",
-      resume: "#",
-      status: "Rejected",
-    },
-  ]);
+  const [applications, setApplications] = useState<ApplicationData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const updateStatus = (
-    id: string,
-    status: "Pending" | "Accepted" | "Rejected"
-  ) => {
-    setApplicants((prev) =>
-      prev.map((applicant) =>
-        applicant._id === id
-          ? { ...applicant, status }
-          : applicant
-      )
-    );
+  const fetchApplicants = async () => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const endpoints: Record<string, string> = {
+        employer: "/applications/employer/dashboard",
+        jobseeker: "/applications/my",
+        admin: "/applications",
+      };
+      
+      const { data } = await axiosInstance.get(endpoints[user.role] || "/applications");
+      setApplications(data.data || []);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to load applications.");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => { fetchApplicants(); }, []);
+
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      await axiosInstance.patch(`/applications/${id}/status`, { status });
+      setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, status: status as any } : app)));
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Unable to update application.");
+    }
+  };
+
+  if (loading) return <div className="p-20 text-center flex justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+  if (error) return <div className="p-10 text-rose-600 font-bold text-center">{error}</div>;
+
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Applicants
-        </h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <h2 className="text-2xl font-black text-slate-950 mb-6">Manage Applications</h2>
 
-        <p className="text-gray-500 mt-2">
-          Manage applications submitted for your jobs.
-        </p>
-      </div>
-
-      {/* Applicants Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="text-left px-6 py-4">
-                  Candidate
-                </th>
-                <th className="text-left px-6 py-4">
-                  Email
-                </th>
-                <th className="text-left px-6 py-4">
-                  Job
-                </th>
-                <th className="text-left px-6 py-4">
-                  Resume
-                </th>
-                <th className="text-left px-6 py-4">
-                  Status
-                </th>
-                <th className="text-left px-6 py-4">
-                  Actions
-                </th>
+      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-slate-400 uppercase text-[10px] font-black tracking-widest">
+            <tr>
+              <th className="p-4 text-left">Candidate</th>
+              <th className="p-4 text-left">Job Position</th>
+              <th className="p-4 text-left">Status</th>
+              <th className="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {applications.map((app) => (
+              <tr key={app._id} className="hover:bg-slate-50 transition">
+                <td className="p-4 font-bold text-slate-800 flex items-center gap-2">
+                  <User size={16} className="text-slate-400" /> {app.applicant?.name || "N/A"}
+                </td>
+                <td className="p-4 text-slate-600 flex items-center gap-2">
+                  <Briefcase size={16} className="text-slate-400" /> {app.job?.title || "N/A"}
+                </td>
+                <td className="p-4">
+                  <StatusBadge status={app.status} />
+                </td>
+                <td className="p-4 text-right space-x-2">
+                  <button onClick={() => updateStatus(app._id, "accepted")} className="text-emerald-600 hover:text-emerald-700 p-2">
+                    <CheckCircle2 size={20} />
+                  </button>
+                  <button onClick={() => updateStatus(app._id, "rejected")} className="text-rose-600 hover:text-rose-700 p-2">
+                    <XCircle size={20} />
+                  </button>
+                </td>
               </tr>
-            </thead>
-
-            <tbody>
-              {applicants.map((applicant) => (
-                <tr
-                  key={applicant._id}
-                  className="border-t hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 font-medium">
-                    {applicant.name}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {applicant.email}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {applicant.jobTitle}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <a
-                      href={applicant.resume}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      View Resume
-                    </a>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        applicant.status === "Accepted"
-                          ? "bg-green-100 text-green-700"
-                          : applicant.status === "Rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {applicant.status}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() =>
-                          updateStatus(
-                            applicant._id,
-                            "Accepted"
-                          )
-                        }
-                        className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                      >
-                        Accept
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          updateStatus(
-                            applicant._id,
-                            "Rejected"
-                          )
-                        }
-                        className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                      >
-                        Reject
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          updateStatus(
-                            applicant._id,
-                            "Pending"
-                          )
-                        }
-                        className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600"
-                      >
-                        Pending
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {applicants.length === 0 && (
-            <div className="text-center py-10 text-gray-500">
-              No applicants found.
-            </div>
-          )}
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
+  );
+};
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const colors: Record<string, string> = {
+    pending: "bg-amber-50 text-amber-700",
+    reviewed: "bg-blue-50 text-blue-700",
+    accepted: "bg-emerald-50 text-emerald-700",
+    rejected: "bg-rose-50 text-rose-700",
+  };
+  return (
+    <span className={`px-3 py-1 rounded-full font-black uppercase text-[10px] ${colors[status] || "bg-slate-100"}`}>
+      {status}
+    </span>
   );
 };
 

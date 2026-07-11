@@ -1,4 +1,8 @@
-import axiosInstance from "./axios";
+import axiosInstance, { axiosFormData } from "./axios";
+
+/* =========================
+   TYPES
+========================= */
 
 export interface Resume {
   _id: string;
@@ -8,55 +12,44 @@ export interface Resume {
   createdAt: string;
 }
 
-export interface ResumeResponse {
+export interface ApiResponse<T = any> {
   success: boolean;
-  data: Resume;
+  message: string;
+  data: T;
 }
 
-// Upload Resume
+/* =========================
+   RESUME APIs
+========================= */
+
+/** * Upload Resume 
+ * Uses the specialized multipart instance for file handling
+ */
 export const uploadResume = async (
   formData: FormData
-): Promise<ResumeResponse> => {
-  const response = await axiosInstance.post(
-    "/resumes",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
-
-  return response.data;
+): Promise<ApiResponse<Resume>> => {
+  const { data } = await axiosFormData.post("/resumes", formData);
+  return data;
 };
 
-// Get My Resumes
-export const getMyResumes = async () => {
-  const response = await axiosInstance.get(
-    "/resumes/my"
-  );
-
-  return response.data;
+/** Get All Resumes for the logged-in user */
+export const getMyResumes = async (): Promise<ApiResponse<Resume[]>> => {
+  const { data } = await axiosInstance.get("/resumes/my");
+  return data;
 };
 
-// Get Resume By ID
+/** Get specific resume by ID */
 export const getResumeById = async (
   resumeId: string
-) => {
-  const response = await axiosInstance.get(
-    `/resumes/${resumeId}`
-  );
-
-  return response.data;
+): Promise<ApiResponse<Resume>> => {
+  const { data } = await axiosInstance.get(`/resumes/${resumeId}`);
+  return data;
 };
 
-// Delete Resume
+/** Delete a resume */
 export const deleteResume = async (
   resumeId: string
-) => {
-  const response = await axiosInstance.delete(
-    `/resumes/${resumeId}`
-  );
-
-  return response.data;
+): Promise<ApiResponse<{ message: string }>> => {
+  const { data } = await axiosInstance.delete(`/resumes/${resumeId}`);
+  return data;
 };

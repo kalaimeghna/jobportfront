@@ -1,102 +1,97 @@
-import { useState } from "react";
-import { FaFilePdf, FaDownload, FaTrash } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { FileText, Download, Trash2, Loader2, UploadCloud } from "lucide-react";
+import axiosInstance from "../../api/axios";
+
+interface ResumeData {
+  _id: string;
+  fileName: string;
+  uploadedAt: string;
+  size: string;
+  url: string;
+}
 
 const ResumeDetails = () => {
-  const [resume] = useState({
-    _id: "1",
-    fileName: "John_Doe_Resume.pdf",
-    uploadedAt: "24 June 2026",
-    size: "1.8 MB",
-    url: "#",
-  });
+  const [resume, setResume] = useState<ResumeData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  const handleDownload = () => {
-    alert("Downloading Resume...");
-    // window.open(resume.url, "_blank");
-  };
+  useEffect(() => {
+    const fetchResume = async () => {
+      try {
+        const { data } = await axiosInstance.get("/users/resume");
+        setResume(data.data);
+      } catch (err) {
+        console.error("No resume found:", err);
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetchResume();
+  }, []);
 
-  const handleDelete = () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this resume?"
-    );
+  const handleDelete = async () => {
+    if (!resume) return;
+    if (!window.confirm("Are you sure you want to delete this resume?")) return;
 
-    if (confirmDelete) {
-      alert("Resume Deleted Successfully");
+    setLoading(true);
+    try {
+      await axiosInstance.delete(`/users/resume/${resume._id}`);
+      setResume(null);
+    } catch (err) {
+      alert("Failed to delete resume.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (fetching) return <div className="text-center py-20 text-slate-400 font-bold">Loading document...</div>;
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header */}
-        <div className="bg-blue-600 text-white p-8">
-          <h1 className="text-3xl font-bold">
-            Resume Details
-          </h1>
+    <div className="max-w-4xl mx-auto px-6 py-12">
+      <header className="mb-10">
+        <h1 className="text-4xl font-black text-slate-950 tracking-tighter">My Resume</h1>
+        <p className="text-slate-500 font-medium mt-2">Manage your uploaded career documents.</p>
+      </header>
 
-          <p className="mt-2 text-blue-100">
-            View and manage your uploaded resume.
-          </p>
-        </div>
-
-        {/* Resume Card */}
-        <div className="p-8">
-          <div className="border rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <FaFilePdf
-                size={50}
-                className="text-red-500"
-              />
-
-              <div>
-                <h2 className="text-xl font-semibold">
-                  {resume.fileName}
-                </h2>
-
-                <p className="text-gray-500">
-                  Uploaded: {resume.uploadedAt}
-                </p>
-
-                <p className="text-gray-500">
-                  Size: {resume.size}
-                </p>
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-8">
+        {resume ? (
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-white rounded-2xl shadow-sm text-red-500">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h2 className="font-black text-slate-900">{resume.fileName}</h2>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    Uploaded: {new Date(resume.uploadedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <a href={resume.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-white px-5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:text-blue-600 transition border border-slate-200">
+                  <Download size={16} /> Download
+                </a>
+                <button onClick={handleDelete} disabled={loading} className="flex items-center gap-2 bg-rose-50 text-rose-600 px-5 py-3 rounded-xl font-bold text-sm hover:bg-rose-100 transition">
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                  Delete
+                </button>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-              >
-                <FaDownload />
-                Download
-              </button>
-
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-              >
-                <FaTrash />
-                Delete
-              </button>
+            {/* Preview Container */}
+            <div className="h-[600px] w-full bg-slate-100 rounded-3xl border-4 border-slate-50 overflow-hidden shadow-inner">
+              <iframe src={resume.url} title="Resume Preview" className="w-full h-full border-none" />
             </div>
           </div>
-
-          {/* Resume Preview */}
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold mb-4">
-              Resume Preview
-            </h3>
-
-            <div className="border rounded-lg overflow-hidden h-[600px]">
-              <iframe
-                src={resume.url}
-                title="Resume Preview"
-                className="w-full h-full"
-              />
-            </div>
+        ) : (
+          <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl">
+            <UploadCloud size={48} className="mx-auto text-slate-300 mb-4" />
+            <h3 className="font-black text-slate-900 text-lg">No resume uploaded</h3>
+            <p className="text-slate-500 mt-2 font-medium">Upload a file to showcase your skills to employers.</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

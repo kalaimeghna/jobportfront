@@ -1,95 +1,71 @@
+import { STORAGE_KEYS } from "./constants";
+
 /**
- * Save data to localStorage
+ * Save data to localStorage with error handling
  */
-export const setLocalStorage = <T>(
-  key: string,
-  value: T
-): void => {
+export const setLocalStorage = <T>(key: string, value: T): void => {
   try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(value)
-    );
+    localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error(
-      "Error saving to localStorage:",
-      error
-    );
+    console.error(`Error saving ${key} to localStorage:`, error);
   }
 };
 
 /**
- * Get data from localStorage
+ * Get data from localStorage with generic type support
  */
-export const getLocalStorage = <T>(
-  key: string
-): T | null => {
+export const getLocalStorage = <T>(key: string): T | null => {
   try {
     const item = localStorage.getItem(key);
-
-    if (!item) {
-      return null;
-    }
-
-    return JSON.parse(item) as T;
+    return item ? JSON.parse(item) : null;
   } catch (error) {
-    console.error(
-      "Error reading from localStorage:",
-      error
-    );
+    console.error(`Error reading ${key} from localStorage:`, error);
     return null;
   }
 };
 
 /**
- * Remove item from localStorage
+ * Remove a specific item
  */
-export const removeLocalStorage = (
-  key: string
-): void => {
+export const removeLocalStorage = (key: string): void => {
   try {
     localStorage.removeItem(key);
   } catch (error) {
-    console.error(
-      "Error removing from localStorage:",
-      error
-    );
+    console.error(`Error removing ${key} from localStorage:`, error);
   }
 };
 
 /**
- * Clear all localStorage
+ * Clear all data from localStorage
  */
 export const clearLocalStorage = (): void => {
   try {
     localStorage.clear();
   } catch (error) {
-    console.error(
-      "Error clearing localStorage:",
-      error
-    );
+    console.error("Error clearing localStorage:", error);
   }
 };
 
-/**
- * Save Auth Token
- */
-export const saveToken = (
-  token: string
-): void => {
-  localStorage.setItem("token", token);
+// ===============================
+// AUTH SPECIFIC HELPERS
+// ===============================
+
+export const saveToken = (token: string): void => {
+  localStorage.setItem(STORAGE_KEYS.TOKEN, token);
 };
 
-/**
- * Get Auth Token
- */
 export const getToken = (): string | null => {
-  return localStorage.getItem("token");
+  return localStorage.getItem(STORAGE_KEYS.TOKEN);
 };
 
-/**
- * Remove Auth Token
- */
 export const removeToken = (): void => {
-  localStorage.removeItem("token");
+  localStorage.removeItem(STORAGE_KEYS.TOKEN);
+};
+
+export const setUser = <T>(user: T): void => {
+  setLocalStorage(STORAGE_KEYS.USER, user);
+};
+
+export const getUser = <T>(): T | null => {
+  return getLocalStorage<T>(STORAGE_KEYS.USER);
 };

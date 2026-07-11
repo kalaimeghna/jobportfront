@@ -1,216 +1,186 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Hero from "../../components/Hero/Hero";
+import {
+  Search,
+  Briefcase,
+  UserCircle,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
+import axiosInstance from "../../api/axios";
 import JobCard from "../../components/Jobs/JobCard";
 
-const Home = () => {
-  const featuredJobs = [
-    {
-      _id: "1",
-      title: "Frontend Developer",
-      company: "Google",
-      description:
-        "Looking for a React developer with TypeScript experience.",
-      location: "Remote",
-      salary: "₹12 LPA",
-      jobType: "Full Time",
-    },
-    {
-      _id: "2",
-      title: "Backend Developer",
-      company: "Microsoft",
-      description:
-        "Build scalable APIs using Node.js and MongoDB.",
-      location: "Bangalore",
-      salary: "₹15 LPA",
-      jobType: "Full Time",
-    },
-    {
-      _id: "3",
-      title: "UI/UX Designer",
-      company: "Amazon",
-      description:
-        "Create modern and responsive user interfaces.",
-      location: "Chennai",
-      salary: "₹10 LPA",
-      jobType: "Hybrid",
-    },
-  ];
+const SectionHeading = ({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) => (
+  <div className="mb-8">
+    <h2 className="text-3xl font-black text-slate-950 tracking-tight">
+      {title}
+    </h2>
+    <p className="text-slate-500 mt-2 font-medium">{subtitle}</p>
+  </div>
+);
 
-  const categories = [
-    "Software Development",
-    "UI/UX Design",
-    "Data Science",
-    "Marketing",
-    "Finance",
-    "Human Resources",
-    "Cyber Security",
-    "Cloud Computing",
-  ];
+const Home = () => {
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const res = await axiosInstance.get("/jobs/recommended");
+
+        console.log("Recommendations API Response:", res.data);
+
+        if (res.data?.success) {
+          setRecommendations((res.data.data || []).slice(0, 3));
+        } else {
+          setRecommendations([]);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch recommendations");
+
+        console.log("Status:", err.response?.status);
+        console.log("Response:", err.response?.data);
+        console.log("Message:", err.message);
+
+        setRecommendations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-20">
       {/* Hero Section */}
-      <Hero />
+      <section className="bg-slate-950 text-white rounded-[2.5rem] p-8 md:p-20 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent" />
 
-      {/* Featured Jobs */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800">
-              Featured Jobs
-            </h2>
-            <p className="text-gray-500 mt-2">
-              Discover the latest opportunities from top companies.
-            </p>
-          </div>
+        <div className="relative z-10 max-w-2xl space-y-6">
+          <span className="bg-blue-600/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest inline-flex items-center gap-2">
+            <Sparkles size={14} />
+            Powered by AI Matching
+          </span>
 
-          <Link
-            to="/jobs"
-            className="text-blue-600 font-semibold hover:underline"
-          >
-            View All Jobs →
-          </Link>
-        </div>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95]">
+            Find your next big opportunity.
+          </h1>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {featuredJobs.map((job) => (
-            <JobCard key={job._id} job={job} />
-          ))}
-        </div>
-      </section>
-
-      {/* Why Choose Us */}
-      <section className="bg-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold">
-              Why Choose Our Platform?
-            </h2>
-
-            <p className="text-gray-500 mt-3">
-              Everything you need to find your dream job or hire
-              top talent.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="text-xl font-semibold mb-3">
-                Thousands of Jobs
-              </h3>
-
-              <p className="text-gray-600">
-                Browse jobs from startups, MNCs, and remote-first
-                companies.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="text-xl font-semibold mb-3">
-                Easy Applications
-              </h3>
-
-              <p className="text-gray-600">
-                Apply instantly with your uploaded resume and
-                profile.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="text-xl font-semibold mb-3">
-                Verified Employers
-              </h3>
-
-              <p className="text-gray-600">
-                Connect directly with trusted companies and
-                recruiters.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Job Categories */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold">
-            Popular Categories
-          </h2>
-
-          <p className="text-gray-500 mt-3">
-            Explore opportunities by category.
-          </p>
-        </div>
-
-        <div className="grid gap-6 grid-cols-2 md:grid-cols-4">
-          {categories.map((category) => (
-            <div
-              key={category}
-              className="bg-white border rounded-xl p-6 text-center shadow hover:shadow-lg transition cursor-pointer"
-            >
-              <h3 className="font-semibold text-gray-700">
-                {category}
-              </h3>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="bg-blue-600 text-white py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-4 text-center">
-            <div>
-              <h3 className="text-4xl font-bold">5000+</h3>
-              <p className="mt-2">Jobs Posted</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold">2500+</h3>
-              <p className="mt-2">Companies</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold">15000+</h3>
-              <p className="mt-2">Candidates</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold">98%</h3>
-              <p className="mt-2">Success Rate</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-4xl font-bold mb-4">
-            Ready to Start Your Career Journey?
-          </h2>
-
-          <p className="text-gray-600 mb-8">
-            Join thousands of job seekers and employers on our
-            platform today.
+          <p className="text-slate-400 text-lg md:text-xl max-w-lg">
+            Upload your resume and let our engine pair your experience with
+            top-tier companies.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="bg-white p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-xl mt-8">
+            <div className="flex items-center flex-1 px-4 text-slate-900">
+              <Search size={20} className="text-slate-400" />
+
+              <input
+                className="w-full px-3 py-3 outline-none"
+                placeholder="Job title or keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
             <Link
-              to="/register"
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition"
+              to={`/jobs?q=${encodeURIComponent(searchQuery)}`}
+              className="bg-blue-600 px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center text-white"
             >
-              Get Started
+              Search
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Actions */}
+      <section className="grid md:grid-cols-2 gap-8">
+        {[
+          {
+            title: "For Employers",
+            desc: "Manage your applicant pipelines and hire faster.",
+            icon: <Briefcase className="text-blue-600" />,
+            link: "/dashboard",
+          },
+          {
+            title: "For Candidates",
+            desc: "Build a standout profile to attract top recruiters.",
+            icon: <UserCircle className="text-purple-600" />,
+            link: "/profile",
+          },
+        ].map((item, index) => (
+          <div
+            key={index}
+            className="p-8 rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-300"
+          >
+            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-6">
+              {item.icon}
+            </div>
+
+            <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
+
+            <p className="text-slate-500 mb-6">{item.desc}</p>
+
+            <Link
+              to={item.link}
+              className="font-bold text-sm flex items-center gap-2 text-blue-600 hover:gap-3 transition-all"
+            >
+              Explore
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        ))}
+      </section>
+
+      {/* Recommended Jobs */}
+      <section>
+        <SectionHeading
+          title="Recommended For You"
+          subtitle="Top matches based on your verified skills."
+        />
+
+        {loading ? (
+          <div className="grid md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="h-64 rounded-3xl bg-slate-100 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : recommendations.length > 0 ? (
+          <div className="grid md:grid-cols-3 gap-6">
+            {recommendations.map((job) => (
+              <JobCard key={job._id} job={job} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200">
+            <h3 className="text-xl font-semibold text-slate-700">
+              No recommendations available
+            </h3>
+
+            <p className="text-slate-500 mt-2">
+              Complete your profile or check back later for personalized job
+              recommendations.
+            </p>
 
             <Link
               to="/jobs"
-              className="border border-blue-600 text-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition"
+              className="inline-block mt-6 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition"
             >
-              Browse Jobs
+              Browse All Jobs
             </Link>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

@@ -1,191 +1,117 @@
-import { useState } from "react";
+import { useState, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import axiosInstance from "../../api/axios";
+import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
-interface Applicant {
-  _id: string;
-  name: string;
-  email: string;
-  jobTitle: string;
-  resume: string;
-  status: "Pending" | "Accepted" | "Rejected";
+interface JobFormData {
+  title: string;
+  department: string;
+  location: string;
+  type: "Full-time" | "Part-time" | "Contract" | "Remote";
+  salaryRange: string;
+  description: string;
+  requirements: string;
 }
 
-const Applicants = () => {
-  const [applicants, setApplicants] = useState<Applicant[]>([
-    {
-      _id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      jobTitle: "Frontend Developer",
-      resume: "#",
-      status: "Pending",
-    },
-    {
-      _id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      jobTitle: "Backend Developer",
-      resume: "#",
-      status: "Accepted",
-    },
-    {
-      _id: "3",
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      jobTitle: "UI/UX Designer",
-      resume: "#",
-      status: "Rejected",
-    },
-  ]);
+const CreateJob = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState<JobFormData>({
+    title: "",
+    department: "",
+    location: "",
+    type: "Full-time",
+    salaryRange: "",
+    description: "",
+    requirements: "",
+  });
 
-  const updateStatus = (
-    id: string,
-    status: "Pending" | "Accepted" | "Rejected"
-  ) => {
-    setApplicants((prev) =>
-      prev.map((applicant) =>
-        applicant._id === id
-          ? { ...applicant, status }
-          : applicant
-      )
-    );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setStatus(null);
+
+    try {
+      await axiosInstance.post("/jobs", formData);
+      setStatus({ type: "success", text: "Job posting created successfully!" });
+      setTimeout(() => navigate("/jobs"), 2000);
+    } catch (err: any) {
+      setStatus({ 
+        type: "error", 
+        text: err.response?.data?.message || "Failed to publish job. Please check your connection." 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Applicants
-        </h1>
-
-        <p className="text-gray-500 mt-2">
-          Manage applications submitted for your jobs.
-        </p>
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-slate-950">Post a New Opportunity</h1>
+        <p className="text-slate-500 mt-1">Define the role requirements and publish to your portal.</p>
       </div>
 
-      {/* Applicants Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="text-left px-6 py-4">
-                  Candidate
-                </th>
-                <th className="text-left px-6 py-4">
-                  Email
-                </th>
-                <th className="text-left px-6 py-4">
-                  Job
-                </th>
-                <th className="text-left px-6 py-4">
-                  Resume
-                </th>
-                <th className="text-left px-6 py-4">
-                  Status
-                </th>
-                <th className="text-left px-6 py-4">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {applicants.map((applicant) => (
-                <tr
-                  key={applicant._id}
-                  className="border-t hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 font-medium">
-                    {applicant.name}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {applicant.email}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {applicant.jobTitle}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <a
-                      href={applicant.resume}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      View Resume
-                    </a>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        applicant.status === "Accepted"
-                          ? "bg-green-100 text-green-700"
-                          : applicant.status === "Rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {applicant.status}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() =>
-                          updateStatus(
-                            applicant._id,
-                            "Accepted"
-                          )
-                        }
-                        className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
-                      >
-                        Accept
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          updateStatus(
-                            applicant._id,
-                            "Rejected"
-                          )
-                        }
-                        className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                      >
-                        Reject
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          updateStatus(
-                            applicant._id,
-                            "Pending"
-                          )
-                        }
-                        className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600"
-                      >
-                        Pending
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {applicants.length === 0 && (
-            <div className="text-center py-10 text-gray-500">
-              No applicants found.
-            </div>
-          )}
+      {status && (
+        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 border ${status.type === "success" ? "bg-emerald-50 border-emerald-100 text-emerald-800" : "bg-rose-50 border-rose-100 text-rose-800"}`}>
+          {status.type === "success" ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <p className="text-sm font-bold">{status.text}</p>
         </div>
-      </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InputField label="Job Title" name="title" required value={formData.title} onChange={handleInputChange} placeholder="e.g. Senior Frontend Developer" />
+          <InputField label="Department" name="department" required value={formData.department} onChange={handleInputChange} placeholder="e.g. Engineering" />
+          
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Job Type</label>
+            <select name="type" value={formData.type} onChange={handleInputChange} className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-600 outline-none transition">
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Contract">Contract</option>
+              <option value="Remote">Remote</option>
+            </select>
+          </div>
+          
+          <InputField label="Location" name="location" value={formData.location} onChange={handleInputChange} placeholder="e.g. New York, NY" />
+          
+          <div className="md:col-span-2">
+            <InputField label="Salary Range" name="salaryRange" value={formData.salaryRange} onChange={handleInputChange} placeholder="e.g. $100k - $130k" />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Description</label>
+            <textarea name="description" required rows={4} value={formData.description} onChange={handleInputChange} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Requirements</label>
+            <textarea name="requirements" required rows={3} value={formData.requirements} onChange={handleInputChange} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
+          </div>
+        </div>
+
+        <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
+          {isSubmitting && <Loader2 className="animate-spin" size={20} />}
+          {isSubmitting ? "Publishing..." : "Publish Job Posting"}
+        </button>
+      </form>
     </div>
   );
 };
 
-export default Applicants;
+const InputField = ({ label, ...props }: any) => (
+  <div>
+    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{label}</label>
+    <input {...props} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition" />
+  </div>
+);
+
+export default CreateJob;

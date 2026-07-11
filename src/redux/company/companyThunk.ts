@@ -1,22 +1,28 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../api/axios";
+import { 
+  Company, 
+  CreateCompanyPayload, 
+  UpdateCompanyPayload,
+  CompanyResponse,
+  CompaniesResponse
+} from "../../types/company.types";
 
 // ==========================
 // CREATE COMPANY
 // ==========================
-export const createCompany = createAsyncThunk(
+export const createCompany = createAsyncThunk<
+  Company, 
+  CreateCompanyPayload, 
+  { rejectValue: string }
+>(
   "company/createCompany",
-  async (
-    companyData: { name: string; description: string; website?: string },
-    { rejectWithValue }
-  ) => {
+  async (companyData, { rejectWithValue }) => {
     try {
-      const { data } = await API.post("/companies", companyData);
-      return data;
+      const { data } = await API.post<CompanyResponse>("/companies", companyData);
+      return data.company; // Extracting the actual company object from the response
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Company creation failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Company creation failed");
     }
   }
 );
@@ -24,16 +30,18 @@ export const createCompany = createAsyncThunk(
 // ==========================
 // GET ALL COMPANIES
 // ==========================
-export const fetchCompanies = createAsyncThunk(
+export const fetchCompanies = createAsyncThunk<
+  Company[], 
+  void, 
+  { rejectValue: string }
+>(
   "company/fetchCompanies",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await API.get("/companies");
-      return data;
+      const { data } = await API.get<CompaniesResponse>("/companies");
+      return data.companies;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch companies"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch companies");
     }
   }
 );
@@ -41,63 +49,76 @@ export const fetchCompanies = createAsyncThunk(
 // ==========================
 // GET SINGLE COMPANY BY ID
 // ==========================
-export const fetchCompanyById = createAsyncThunk(
+export const fetchCompanyById = createAsyncThunk<
+  Company, 
+  string, 
+  { rejectValue: string }
+>(
   "company/fetchCompanyById",
-  async (id: string, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
-      const { data } = await API.get(`/companies/${id}`);
-      return data;
+      const { data } = await API.get<CompanyResponse>(`/companies/${id}`);
+      return data.company;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch company"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch company");
     }
   }
 );
 
 // ==========================
-// GET MY COMPANY (RECRUITER)
+// GET MY COMPANY (EMPLOYER)
 // ==========================
-export const fetchMyCompany = createAsyncThunk(
+export const fetchMyCompany = createAsyncThunk<
+  Company, 
+  void, 
+  { rejectValue: string }
+>(
   "company/fetchMyCompany",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await API.get("/companies/my-company");
-      return data;
+      const { data } = await API.get<CompanyResponse>("/companies/my-company");
+      return data.company;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch your company"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch your company");
     }
   }
 );
 
 // ==========================
-// UPDATE COMPANY
+// UPDATE COMPANY (Handles File Uploads)
 // ==========================
-export const updateCompany = createAsyncThunk(
+export const updateCompany = createAsyncThunk<
+  Company, 
+  UpdateCompanyPayload, 
+  { rejectValue: string }
+>(
   "company/updateCompany",
-  async (
-    {
-      id,
-      updatedData,
-    }: {
-      id: string;
-      updatedData: {
-        name?: string;
-        description?: string;
-        website?: string;
-      };
-    },
-    { rejectWithValue }
-  ) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      const { data } = await API.put(`/companies/${id}`, updatedData);
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Company update failed"
+      const { companyId, ...updateData } = payload;
+      let dataToSend: any = updateData;
+      let headers = {};
+
+      // If the logo is a File, we must use multipart/form-data
+      if (updateData.logo instanceof File) {
+        dataToSend = new FormData();
+        Object.entries(updateData).forEach(([key, value]) => {
+          if (value !== undefined) {
+            dataToSend.append(key, value);
+          }
+        });
+        headers = { "Content-Type": "multipart/form-data" };
+      }
+
+      const { data } = await API.put<CompanyResponse>(
+        `/companies/${companyId}`, 
+        dataToSend, 
+        { headers }
       );
+      
+      return data.company;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Company update failed");
     }
   }
 );
@@ -105,16 +126,18 @@ export const updateCompany = createAsyncThunk(
 // ==========================
 // DELETE COMPANY
 // ==========================
-export const deleteCompany = createAsyncThunk(
+export const deleteCompany = createAsyncThunk<
+  { id: string }, 
+  string, 
+  { rejectValue: string }
+>(
   "company/deleteCompany",
-  async (id: string, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
-      const { data } = await API.delete(`/companies/${id}`);
-      return { id, ...data };
+      await API.delete(`/companies/${id}`);
+      return { id }; // Returning ID so the slice can filter it out of state
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Company deletion failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Company deletion failed");
     }
   }
 );

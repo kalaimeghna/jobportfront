@@ -1,24 +1,20 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../api/axios";
+import { Application, ApplicationStatus } from "./applicationSlice";
 
 // ==========================
 // APPLY FOR A JOB
 // ==========================
-export const applyJob = createAsyncThunk(
+export const applyJob = createAsyncThunk<Application, FormData, { rejectValue: string }>(
   "applications/applyJob",
-  async (formData: FormData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
-      const { data } = await API.post("/applications/apply", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      const { data } = await API.post<{ application: Application }>("/applications/apply", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
-      return data;
+      return data.application;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Job apply failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Job application failed");
     }
   }
 );
@@ -26,33 +22,29 @@ export const applyJob = createAsyncThunk(
 // ==========================
 // GET ALL APPLICATIONS
 // ==========================
-export const fetchApplications = createAsyncThunk(
-  "application/fetchApplications",
+export const fetchApplications = createAsyncThunk<Application[], void, { rejectValue: string }>(
+  "applications/fetchApplications",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await API.get("/applications");
-      return data;
+      const { data } = await API.get<{ applications: Application[] }>("/applications");
+      return data.applications;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch applications"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch applications");
     }
   }
 );
 
 // ==========================
-// GET APPLICATION BY JOB
+// GET APPLICATIONS BY JOB
 // ==========================
-export const fetchApplicationsByJob = createAsyncThunk(
-  "application/fetchByJob",
-  async (jobId: string, { rejectWithValue }) => {
+export const fetchApplicationsByJob = createAsyncThunk<Application[], string, { rejectValue: string }>(
+  "applications/fetchByJob",
+  async (jobId, { rejectWithValue }) => {
     try {
-      const { data } = await API.get(`/applications/job/${jobId}`);
-      return data;
+      const { data } = await API.get<{ applications: Application[] }>(`/applications/job/${jobId}`);
+      return data.applications;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch job applications"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch job applications");
     }
   }
 );
@@ -60,22 +52,18 @@ export const fetchApplicationsByJob = createAsyncThunk(
 // ==========================
 // UPDATE APPLICATION STATUS
 // ==========================
-export const updateApplicationStatus = createAsyncThunk(
-  "application/updateStatus",
-  async (
-    { id, status }: { id: string; status: "pending" | "accepted" | "rejected" },
-    { rejectWithValue }
-  ) => {
+export const updateApplicationStatus = createAsyncThunk<
+  Application,
+  { id: string; status: ApplicationStatus },
+  { rejectValue: string }
+>(
+  "applications/updateStatus",
+  async ({ id, status }, { rejectWithValue }) => {
     try {
-      const { data } = await API.patch(`/applications/${id}`, {
-        status,
-      });
-
-      return data;
+      const { data } = await API.patch<{ application: Application }>(`/applications/${id}`, { status });
+      return data.application;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Status update failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Status update failed");
     }
   }
 );

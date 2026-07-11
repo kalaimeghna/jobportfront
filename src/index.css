@@ -1,10 +1,25 @@
 @import "tailwindcss";
+
 @theme {
+  /* Fonts */
   --font-sans: "Inter", sans-serif;
 
+  /* Brand Colors */
   --color-brand-50: #f0f4ff;
   --color-brand-100: #e0e9ff;
   --color-brand-500: #4f6ef7;
   --color-brand-600: #3d5ce8;
   --color-brand-700: #2d4bd4;
+
+  /* Status Colors for Application Statuses */
+  --color-success: #22c55e; /* For 'Accepted' */
+  --color-warning: #f59e0b; /* For 'Reviewing' */
+  --color-danger: #ef4444;  /* For 'Rejected' */
+  --color-info: #3b82f6;    /* For 'Shortlisted' */
+
+  /* Grayscale (Essential for clean UI) */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-500: #6b7280;
+  --color-gray-900: #111827;
 }

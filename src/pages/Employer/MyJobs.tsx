@@ -1,194 +1,113 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import {
-  FaEdit,
-  FaTrash,
-  FaEye,
-  FaPlus,
-} from "react-icons/fa";
+import { Eye, Edit2, Trash2, Plus, Loader2, Briefcase } from "lucide-react";
+import axiosInstance from "../../api/axios";
 
 interface Job {
   _id: string;
   title: string;
   company: string;
   location: string;
-  jobType: string;
   applications: number;
-  status: string;
+  status: "Active" | "Closed";
 }
 
 const MyJobs = () => {
-  const [jobs, setJobs] = useState<Job[]>([
-    {
-      _id: "1",
-      title: "Frontend Developer",
-      company: "Google",
-      location: "Remote",
-      jobType: "Full Time",
-      applications: 25,
-      status: "Active",
-    },
-    {
-      _id: "2",
-      title: "Backend Developer",
-      company: "Microsoft",
-      location: "Bangalore",
-      jobType: "Full Time",
-      applications: 18,
-      status: "Active",
-    },
-    {
-      _id: "3",
-      title: "UI/UX Designer",
-      company: "Amazon",
-      location: "Chennai",
-      jobType: "Hybrid",
-      applications: 10,
-      status: "Closed",
-    },
-  ]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (id: string) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this job?"
-    );
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
-    if (confirmDelete) {
-      setJobs(jobs.filter((job) => job._id !== id));
+  const fetchJobs = async () => {
+    try {
+      const { data } = await axiosInstance.get("/employer/jobs");
+      setJobs(data);
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this job?")) return;
+    try {
+      await axiosInstance.delete(`/jobs/${id}`);
+      setJobs((prev) => prev.filter((job) => job._id !== id));
+    } catch (err) {
+      alert("Failed to delete job.");
+    }
+  };
+
+  if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-blue-600" size={32} /></div>;
+
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">
-            My Jobs
-          </h1>
-
-          <p className="text-gray-500 mt-2">
-            Manage all your posted jobs.
-          </p>
+          <h1 className="text-3xl font-black text-slate-950">My Jobs</h1>
+          <p className="text-slate-500 mt-1">Manage, track, and edit your active job listings.</p>
         </div>
-
-        <Link
-          to="/employer/create-job"
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700"
-        >
-          <FaPlus />
-          Create Job
+        <Link to="/employer/create-job" className="bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 transition">
+          <Plus size={18} /> Create Job
         </Link>
       </div>
 
-      {/* Jobs Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="text-left px-6 py-4">
-                  Job Title
-                </th>
-                <th className="text-left px-6 py-4">
-                  Company
-                </th>
-                <th className="text-left px-6 py-4">
-                  Location
-                </th>
-                <th className="text-left px-6 py-4">
-                  Type
-                </th>
-                <th className="text-left px-6 py-4">
-                  Applications
-                </th>
-                <th className="text-left px-6 py-4">
-                  Status
-                </th>
-                <th className="text-left px-6 py-4">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {jobs.map((job) => (
-                <tr
-                  key={job._id}
-                  className="border-t hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 font-medium">
-                    {job.title}
-                  </td>
-
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+            <tr>
+              <th className="px-6 py-4">Job Title</th>
+              <th className="px-6 py-4">Location</th>
+              <th className="px-6 py-4">Applications</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {jobs.length > 0 ? (
+              jobs.map((job) => (
+                <tr key={job._id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    {job.company}
+                    <p className="font-bold text-slate-900 flex items-center gap-2">
+                      <Briefcase size={16} className="text-slate-400" /> {job.title}
+                    </p>
+                    <p className="text-xs text-slate-500 ml-6">{job.company}</p>
                   </td>
-
+                  <td className="px-6 py-4 text-slate-600 text-sm">{job.location}</td>
+                  <td className="px-6 py-4 font-bold text-slate-900">{job.applications}</td>
                   <td className="px-6 py-4">
-                    {job.location}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {job.jobType}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {job.applications}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        job.status === "Active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${job.status === "Active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
                       {job.status}
                     </span>
                   </td>
-
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        to={`/jobs/${job._id}`}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <FaEye size={18} />
-                      </Link>
-
-                      <Link
-                        to={`/employer/edit-job/${job._id}`}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <FaEdit size={18} />
-                      </Link>
-
-                      <button
-                        onClick={() =>
-                          handleDelete(job._id)
-                        }
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <FaTrash size={18} />
+                    <div className="flex justify-end gap-1">
+                      <ActionButton to={`/jobs/${job._id}`} icon={<Eye size={16} />} color="text-slate-400 hover:text-blue-600" />
+                      <ActionButton to={`/employer/edit-job/${job._id}`} icon={<Edit2 size={16} />} color="text-slate-400 hover:text-emerald-600" />
+                      <button onClick={() => handleDelete(job._id)} className="p-2 text-slate-400 hover:text-rose-600 transition">
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {jobs.length === 0 && (
-            <div className="text-center py-10 text-gray-500">
-              No jobs posted yet.
-            </div>
-          )}
-        </div>
+              ))
+            ) : (
+              <tr><td colSpan={5} className="py-16 text-center text-slate-400">No job listings found.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
+
+const ActionButton = ({ to, icon, color }: any) => (
+  <Link to={to} className={`p-2 rounded-lg transition ${color}`}>
+    {icon}
+  </Link>
+);
 
 export default MyJobs;

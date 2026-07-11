@@ -1,19 +1,20 @@
-export const formatDateTime = (
-  date: string | Date
-): string => {
+/**
+ * Formats a date string or Date object into a readable string (e.g., 04 Jul 2026).
+ * Handles null/undefined and invalid date objects gracefully.
+ */
+export const formatDate = (date: string | Date | null | undefined): string => {
   if (!date) return "";
 
-  const formattedDate = new Date(date);
+  const d = new Date(date);
 
-  if (isNaN(formattedDate.getTime())) {
+  // Check if the date is valid
+  if (isNaN(d.getTime())) {
     return "Invalid Date";
   }
 
-  return formattedDate.toLocaleString("en-IN", {
+  return d.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };

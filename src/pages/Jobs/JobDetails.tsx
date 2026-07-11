@@ -1,202 +1,117 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import axios from "axios";
-import {
-  FaMapMarkerAlt,
-  FaMoneyBillWave,
-  FaBriefcase,
-  FaBuilding,
-} from "react-icons/fa";
-
-interface CompanyInfo {
-  name: string;
-}
-
-interface JobData {
-  _id: string;
-  title: string;
-  companyName?: string;
-  company?: CompanyInfo;
-  location: string;
-  salary: string;
-  jobType: string;
-  experience?: string;
-  description: string;
-  requirements?: string[];
-  responsibilities?: string[];
-  createdAt: string;
-}
+import { useParams, Link } from "react-router-dom";
+import axiosInstance from "../../api/axios";
+import { MapPin, Banknote, Briefcase, ChevronLeft, Building2, Tag } from "lucide-react";
 
 const JobDetails = () => {
-  // 1. CHANGED HERE: Grab jobId from the URL parameters
-  const { jobId } = useParams<{ jobId: string }>();
-  const [job, setJob] = useState<JobData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [applying, setApplying] = useState<boolean>(false);
-  const [applyMessage, setApplyMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  const API_BASE = "http://localhost:5000";
+  const { id } = useParams<{ id: string }>();
+  const [job, setJob] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
-      // 2. CHANGED HERE: Check for jobId instead of id
-      if (!jobId) return;
-      
       try {
-        setLoading(true);
-        // 3. CHANGED HERE: Call your jobs API using the jobId variable
-        const response = await axios.get(`${API_BASE}/api/jobs/${jobId}`);
-        const finalData = response.data.data ? response.data.data : response.data;
-        setJob(finalData);
-        setError(null);
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || "Failed to load job details.");
-        } else if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unexpected system error occurred.");
-        }
+        const { data } = await axiosInstance.get(`/jobs/${id}`);
+        setJob(data.job || data.data);
+      } catch (err) {
+        console.error("Error fetching job details:", err);
       } finally {
         setLoading(false);
       }
     };
+    if (id) fetchJobDetails();
+  }, [id]);
 
-    fetchJobDetails();
-  }, [jobId]); // 4. CHANGED HERE: Added jobId to the dependency array
-
-  const handleApply = async () => {
-    // 5. CHANGED HERE: Fallback to the URL's jobId if state isn't populated
-    const targetJobId = job?._id || jobId;
-    
-    if (!targetJobId) {
-      setApplyMessage({ type: "error", text: "❌ Invalid target identifier configuration." });
-      return;
-    }
-
-    setApplying(true);
-    setApplyMessage(null);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await axios.post(
-        `${API_BASE}/api/applications/apply/${targetJobId}`,
-        {}, 
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
-
-      if (response.data.success) {
-        setApplyMessage({ type: "success", text: "🎉 Application submitted successfully!" });
-      }
-    } catch (err: any) {
-      const errMsg = err.response?.data?.message || "Could not complete your application.";
-      setApplyMessage({ type: "error", text: `❌ ${errMsg}` });
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen text-xl font-semibold text-gray-600">
-        Loading job details...
-      </div>
-    );
-  }
-
-  if (error || !job) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-screen gap-4">
-        <div className="text-xl font-semibold text-red-600">{error || "Job not found"}</div>
-        <Link to="/jobs" className="text-blue-600 hover:underline">Back to Job Listings</Link>
-      </div>
-    );
-  }
+  if (loading) return <div className="p-20 text-center text-slate-500 font-bold">Fetching details...</div>;
+  if (!job) return <div className="p-20 text-center text-rose-600 font-bold">Job not found.</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
-      
-      {applyMessage && (
-        <div className={`p-4 mb-6 rounded-lg font-medium text-sm border ${
-          applyMessage.type === "success" 
-            ? "bg-green-50 text-green-800 border-green-200" 
-            : "bg-red-50 text-red-800 border-red-200"
-        }`}>
-          {applyMessage.text}
-        </div>
-      )}
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <Link to="/jobs" className="flex items-center gap-1 text-slate-400 hover:text-slate-900 font-bold mb-8 transition">
+        <ChevronLeft size={20} /> Back to Listings
+      </Link>
 
-      <div className="bg-white rounded-xl shadow-md p-8 mb-8">
-        <h1 className="text-4xl font-bold text-gray-800">{job.title}</h1>
-
-        <div className="flex flex-wrap gap-6 mt-4 text-gray-600">
-          <div className="flex items-center gap-2">
-            <FaBuilding />
-            <span>{job.company?.name || job.companyName || "Company Name"}</span>
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 md:p-10 shadow-sm">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-8 border-b border-slate-100">
+          <div className="flex gap-4">
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500">
+              <Building2 size={32} />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-slate-950 tracking-tighter mb-1">{job.title}</h1>
+              <p className="text-lg font-bold text-slate-500">{job.company?.companyName || "Company Name"}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <FaMapMarkerAlt />
-            <span>{job.location}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <FaMoneyBillWave />
-            <span>₹{job.salary}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <FaBriefcase />
-            <span>{job.jobType}</span>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-4">
-          <button
-            onClick={handleApply}
-            disabled={applying}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:bg-blue-400"
+          <Link 
+            to={`/apply/${id}`}
+            className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 whitespace-nowrap"
           >
-            {applying ? "Submitting Application..." : "Apply Now"}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-2xl font-semibold mb-4">Job Description</h2>
-            <p className="text-gray-600 leading-7 whitespace-pre-line">{job.description}</p>
-          </div>
-
-          {job.responsibilities && (
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-2xl font-semibold mb-4">Responsibilities</h2>
-              <ul className="list-disc pl-6 space-y-2 text-gray-600">
-                {job.responsibilities.map((item, i) => <li key={i}>{item}</li>)}
-              </ul>
-            </div>
-          )}
+            Apply Now
+          </Link>
         </div>
 
-        <div>
-          <div className="bg-white rounded-xl shadow-md p-6 sticky top-6">
-            <h2 className="text-xl font-semibold mb-4">Job Overview</h2>
-            <div className="space-y-4">
-              <div><p className="text-gray-500 text-sm">Company</p><p>{job.company?.name || job.companyName}</p></div>
-              <div><p className="text-gray-500 text-sm">Location</p><p>{job.location}</p></div>
-              <div><p className="text-gray-500 text-sm">Posted</p><p>{new Date(job.createdAt).toLocaleDateString()}</p></div>
-            </div>
-          </div>
+        {/* Metadata */}
+        <div className="flex flex-wrap gap-4 py-8 border-b border-slate-100 text-sm">
+          <MetaItem icon={<MapPin size={16} />} text={job.location} color="text-rose-500" />
+          <MetaItem
+  icon={<Banknote size={16} />}
+  text={
+    job.salary
+      ? `₹${job.salary}`
+      : `₹${job.salaryMin ?? 0} - ₹${job.salaryMax ?? 0}`
+  }
+  color="text-emerald-500"
+/>
+          <MetaItem icon={<Briefcase size={16} />} text={job.jobType} color="text-blue-500" />
+        </div>
+
+        {/* Details */}
+        <div className="space-y-10 mt-8">
+          <Section title="Job Description" content={job.description} />
+          <Section title="Requirements" content={job.requirements} />
+          
+          {job.skills && (
+  <div>
+    <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">
+      Skills Required
+    </h2>
+
+    <div className="flex flex-wrap gap-2">
+      {(Array.isArray(job.skills)
+        ? job.skills
+        : typeof job.skills === "string"
+        ? job.skills.split(",")
+        : []
+      ).map((skill: string, index: number) => (
+        <span
+          key={index}
+          className="px-4 py-2 bg-slate-50 text-slate-700 rounded-full text-xs font-bold flex items-center gap-2"
+        >
+          <Tag size={12} />
+          {skill.trim()}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
         </div>
       </div>
     </div>
   );
 };
+
+const MetaItem = ({ icon, text, color }: { icon: any, text: string, color: string }) => (
+  <div className={`flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl font-bold ${color}`}>
+    {icon} <span className="text-slate-700">{text}</span>
+  </div>
+);
+
+const Section = ({ title, content }: { title: string, content: string }) => (
+  <div>
+    <h2 className="text-2xl font-black text-slate-950 mb-4">{title}</h2>
+    <p className="text-slate-600 leading-relaxed whitespace-pre-line text-lg">{content}</p>
+  </div>
+);
 
 export default JobDetails;

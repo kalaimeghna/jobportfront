@@ -4,120 +4,66 @@ import axiosInstance from "./axios";
    TYPES
 ========================= */
 
-export interface CompanyData {
-  name: string;
+export interface JobData {
+  title: string;
   description: string;
+  requirements: string[];
+  salary: number;
   location: string;
-  website?: string;
+  jobType: "full-time" | "part-time" | "contract" | "freelance";
+  experienceLevel: "entry" | "mid" | "senior";
 }
 
-export interface UpdateCompanyData {
-  name?: string;
-  description?: string;
-  location?: string;
-  website?: string;
+export interface UpdateJobData extends Partial<JobData> {
+  status?: "active" | "closed";
+}
+
+export interface Job extends JobData {
+  _id: string;
+  company: string;
+  employer: string;
+  status: "active" | "closed";
+  createdAt: string;
 }
 
 /* =========================
-   COMPANY APIs
+   JOB APIs
 ========================= */
 
-// Create Company
-export const createCompany = async (
-  companyData: CompanyData
-) => {
-  const response = await axiosInstance.post(
-    "/company",
-    companyData
-  );
-
-  return response.data;
+/** Create a new job post */
+export const createJob = async (jobData: JobData): Promise<Job> => {
+  const { data } = await axiosInstance.post("/jobs", jobData);
+  return data.data;
 };
 
-// Get All Companies
-export const getCompanies = async (
-  keyword = "",
-  page = 1
-) => {
-  const response = await axiosInstance.get(
-    `/company?keyword=${keyword}&page=${page}`
-  );
-
-  return response.data;
+/** Get all jobs (with search/filter/pagination) */
+export const getJobs = async (keyword = "", page = 1) => {
+  const { data } = await axiosInstance.get("/jobs", {
+    params: { keyword, page },
+  });
+  return data;
 };
 
-// Get Company By ID
-export const getCompanyById = async (
-  companyId: string
-) => {
-  const response = await axiosInstance.get(
-    `/company/${companyId}`
-  );
-
-  return response.data;
+/** Get a single job by ID */
+export const getJobById = async (jobId: string): Promise<Job> => {
+  const { data } = await axiosInstance.get(`/jobs/${jobId}`);
+  return data.data;
 };
 
-// Get Logged-In Employer Company
-export const getMyCompany = async () => {
-  const response = await axiosInstance.get(
-    "/company/my-company"
-  );
-
-  return response.data;
+/** Update a job post */
+export const updateJob = async (jobId: string, jobData: UpdateJobData): Promise<Job> => {
+  const { data } = await axiosInstance.put(`/jobs/${jobId}`, jobData);
+  return data.data;
 };
 
-// Update Company
-export const updateCompany = async (
-  companyId: string,
-  companyData: UpdateCompanyData
-) => {
-  const response = await axiosInstance.put(
-    `/company/${companyId}`,
-    companyData
-  );
-
-  return response.data;
+/** Delete a job post */
+export const deleteJob = async (jobId: string): Promise<{ message: string }> => {
+  const { data } = await axiosInstance.delete(`/jobs/${jobId}`);
+  return data;
 };
 
-// Delete Company
-export const deleteCompany = async (
-  companyId: string
-) => {
-  const response = await axiosInstance.delete(
-    `/company/${companyId}`
-  );
-
-  return response.data;
-};
-
-// Upload Company Logo
-export const uploadCompanyLogo = async (
-  file: File
-) => {
-  const formData = new FormData();
-
-  formData.append("logo", file);
-
-  const response = await axiosInstance.post(
-    "/company/logo",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
-
-  return response.data;
-};
-
-// Get Company Jobs
-export const getCompanyJobs = async (
-  companyId: string
-) => {
-  const response = await axiosInstance.get(
-    `/company/${companyId}/jobs`
-  );
-
-  return response.data;
+/** Get jobs created by the authenticated employer */
+export const getEmployerJobs = async (): Promise<Job[]> => {
+  const { data } = await axiosInstance.get("/jobs/employer");
+  return data.data;
 };

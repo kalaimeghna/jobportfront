@@ -1,21 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-export interface Job {
-  _id: string;
-  title: string;
-  company: string;
-  location: string;
-  description?: string;
-  salary?: number;
-  createdAt?: string;
-}
-
-interface JobState {
-  jobs: Job[];
-  selectedJob: Job | null;
-  loading: boolean;
-  error: string | null;
-}
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { fetchJobs } from './jobThunk'; 
+import { Job, JobState } from '../../types/job.types';
 
 const initialState: JobState = {
   jobs: [],
@@ -25,81 +10,34 @@ const initialState: JobState = {
 };
 
 const jobSlice = createSlice({
-  name: "jobs",
+  name: 'jobs',
   initialState,
-
   reducers: {
-    // set all jobs
-    setJobs: (state, action: PayloadAction<Job[]>) => {
-      state.jobs = action.payload;
-    },
-
-    // set single job (job details page)
-    setSelectedJob: (state, action: PayloadAction<Job | null>) => {
-      state.selectedJob = action.payload;
-    },
-
-    // add job (create job)
-    addJob: (state, action: PayloadAction<Job>) => {
-      state.jobs.unshift(action.payload);
-    },
-
-    // update job
-    updateJob: (state, action: PayloadAction<Job>) => {
-      state.jobs = state.jobs.map((job) =>
-        job._id === action.payload._id ? action.payload : job
-      );
-
-      if (
-        state.selectedJob &&
-        state.selectedJob._id === action.payload._id
-      ) {
-        state.selectedJob = action.payload;
-      }
-    },
-
-    // delete job
-    deleteJob: (state, action: PayloadAction<string>) => {
-      state.jobs = state.jobs.filter(
-        (job) => job._id !== action.payload
-      );
-
-      if (
-        state.selectedJob &&
-        state.selectedJob._id === action.payload
-      ) {
-        state.selectedJob = null;
-      }
-    },
-
-    // loading state
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
-    },
-
-    // error state
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-    },
-
-    // clear state
-    clearJobs: (state) => {
-      state.jobs = [];
-      state.selectedJob = null;
+    clearJobError: (state) => {
       state.error = null;
     },
+    setSelectedJob: (state, action: PayloadAction<Job | null>) => {
+      state.selectedJob = action.payload;
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      // Handle Fetch All Jobs
+      .addCase(fetchJobs.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchJobs.fulfilled, (state, action: PayloadAction<Job[]>) => {
+        state.loading = false;
+        state.jobs = action.payload;
+      })
+      .addCase(fetchJobs.rejected, (state, action) => {
+        state.loading = false;
+        // action.payload is the string returned by rejectWithValue
+        state.error = action.payload as string ?? 'Failed to fetch jobs';
+      });
   },
 });
 
-export const {
-  setJobs,
-  setSelectedJob,
-  addJob,
-  updateJob,
-  deleteJob,
-  setLoading,
-  setError,
-  clearJobs,
-} = jobSlice.actions;
-
+export const { clearJobError, setSelectedJob } = jobSlice.actions;
 export default jobSlice.reducer;

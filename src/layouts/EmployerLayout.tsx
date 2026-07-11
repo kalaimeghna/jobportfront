@@ -1,29 +1,63 @@
+import React, { Suspense } from "react";
 import { Outlet } from "react-router-dom";
-import Navbar from "../components/Navbar/Navbar";
+import { Menu, X } from "lucide-react";
 import Sidebar from "../components/Sidebar/Sidebar";
-import Footer from "../components/Footer/Footer";
+import Navbar from "../components/Navbar/Navbar";
 
-const EmployerLayout = () => {
+const EmployerLayout: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  const closeSidebar = () => setIsSidebarOpen(false);
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      {/* Navbar */}
-      <Navbar />
-
-      {/* Main Content Area */}
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="hidden md:block w-64 bg-white border-r">
-          <Sidebar />
-        </aside>
-
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
-          <Outlet />
-        </main>
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      {/* Global Navbar */}
+      <div className="z-50 sticky top-0 bg-white border-b border-slate-200 shadow-sm">
+        <Navbar />
       </div>
 
-      {/* Footer */}
-      <Footer />
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Menu Toggle */}
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="md:hidden absolute top-4 right-4 z-50 p-2 text-slate-600 bg-white shadow-md rounded-xl border border-slate-200"
+          aria-label="Toggle Menu"
+          aria-expanded={isSidebarOpen}
+        >
+          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* Mobile Backdrop */}
+        {isSidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={closeSidebar}
+          />
+        )}
+
+        {/* Sidebar Navigation */}
+        <aside
+          className={`${
+            isSidebarOpen 
+              ? "fixed inset-y-0 left-0 w-64 z-40 bg-white shadow-xl" 
+              : "hidden"
+          } md:block md:w-64 border-r border-slate-200 bg-white shrink-0 overflow-y-auto transition-all duration-300`}
+        >
+          <div className="h-full">
+            {/* Note: No 'role' prop needed here, Sidebar uses useAuth() internally */}
+            <Sidebar onClose={closeSidebar} />
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-10">
+          <div className="max-w-7xl mx-auto min-h-[calc(100vh-120px)]">
+            <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+              <Outlet />
+            </Suspense>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

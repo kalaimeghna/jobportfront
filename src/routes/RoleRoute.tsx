@@ -1,30 +1,32 @@
+import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useAppSelector } from "../hooks/redux";
+import { useAuth } from "../context/AuthContext";
 
-interface RoleRoutesProps {
-  allowedRoles: string[];
+interface RoleRouteProps {
+  allowedRoles: ("jobseeker" | "employer" | "admin")[];
 }
 
-const RoleRoutes = ({
-  allowedRoles,
-}: RoleRoutesProps) => {
-  const { user, isAuthenticated } =
-    useAppSelector((state) => state.auth);
+const RoleRoute: React.FC<RoleRouteProps> = ({ allowedRoles }) => {
+  const { user, loading } = useAuth();
 
-  // Not logged in
-  if (!isAuthenticated) {
+  // 1. Maintain consistent loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-slate-500">
+        Authenticating...
+      </div>
+    );
+  }
+
+  // 2. Not logged in: Send to Login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Role not allowed
-  if (
-    !user ||
-    !allowedRoles.includes(user.role)
-  ) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <Outlet />;
+  // 3. Logged in but wrong role: Send to Home (or an Unauthorized page)
+  return allowedRoles.includes(user.role) 
+    ? <Outlet /> 
+    : <Navigate to="/" replace />;
 };
 
-export default RoleRoutes;
+export default RoleRoute;

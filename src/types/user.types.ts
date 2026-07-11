@@ -1,91 +1,63 @@
-export type UserRole =
-  | "jobseeker"
-  | "employer"
-  | "admin";
-
-export interface User {
+/**
+ * Resume Interface
+ * The 'user' field links the resume to the Job Seeker.
+ */
+export interface Resume {
   _id: string;
-
-  name: string;
-  email: string;
-
-  role: UserRole;
-
-  phone?: string;
-  location?: string;
-
-  profilePicture?: string;
-
-  title?: string;
-  bio?: string;
-
-  skills?: string[];
-
-  experience?: string;
-  education?: string;
-
-  linkedin?: string;
-  github?: string;
-
-  resume?: string;
-
-  company?: {
+  fileName: string;
+  fileUrl: string;
+  publicId?: string; // Essential for Cloudinary/S3 deletions
+  fileSize?: number;
+  fileType?: string;
+  user: {
     _id: string;
     name: string;
+    email: string;
   };
-
-  isVerified?: boolean;
-
+  uploadedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface UpdateUserPayload {
-  name?: string;
-  email?: string;
-  phone?: string;
-  location?: string;
-
-  title?: string;
-  bio?: string;
-
-  skills?: string[];
-
-  experience?: string;
-  education?: string;
-
-  linkedin?: string;
-  github?: string;
-
-  profilePicture?: string;
+/**
+ * Payload for uploading a new resume
+ */
+export interface UploadResumePayload {
+  resume: File;
 }
 
-export interface ChangePasswordPayload {
-  currentPassword: string;
-  newPassword: string;
+/**
+ * Payload for updating an existing resume
+ */
+export interface UpdateResumePayload {
+  resumeId: string;
+  resume: File;
 }
 
-export interface UserResponse {
+/**
+ * API Response for a single resume
+ */
+export interface ResumeResponse {
   success: boolean;
   message?: string;
-
-  user: User;
+  resume: Resume;
 }
 
-export interface UsersResponse {
+/**
+ * API Response for a list of resumes
+ */
+export interface ResumesResponse {
   success: boolean;
-
   count: number;
-
-  users: User[];
+  resumes: Resume[];
 }
 
-export interface UserState {
-  users: User[];
-
-  user: User | null;
-
+/**
+ * Global state for resumes
+ */
+export interface ResumeState {
+  resumes: Resume[];
+  resume: Resume | null;
   loading: boolean;
-
   error: string | null;
 }

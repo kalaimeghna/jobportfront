@@ -1,23 +1,38 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../api/axios";
+import { User } from "../../types/auth.types";
+
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  role: "jobseeker" | "employer";
+}
+
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+}
 
 // ==========================
 // REGISTER USER
 // ==========================
-export const registerUser = createAsyncThunk(
+export const registerUser = createAsyncThunk<
+  AuthResponse,
+  RegisterData,
+  { rejectValue: string }
+>(
   "auth/registerUser",
-  async (
-    userData: { name: string; email: string; password: string },
-    { rejectWithValue }
-  ) => {
+  async (userData, { rejectWithValue }) => {
     try {
       const { data } = await API.post("/auth/register", userData);
-
-      // optional: store token
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
-
       return data;
     } catch (error: any) {
       return rejectWithValue(
@@ -30,20 +45,15 @@ export const registerUser = createAsyncThunk(
 // ==========================
 // LOGIN USER
 // ==========================
-export const loginUser = createAsyncThunk(
+export const loginUser = createAsyncThunk<
+  AuthResponse,
+  LoginData,
+  { rejectValue: string }
+>(
   "auth/loginUser",
-  async (
-    userData: { email: string; password: string },
-    { rejectWithValue }
-  ) => {
+  async (userData, { rejectWithValue }) => {
     try {
       const { data } = await API.post("/auth/login", userData);
-
-      // store token
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
-
       return data;
     } catch (error: any) {
       return rejectWithValue(
@@ -56,12 +66,18 @@ export const loginUser = createAsyncThunk(
 // ==========================
 // GET CURRENT USER
 // ==========================
-export const fetchCurrentUser = createAsyncThunk(
+export const fetchCurrentUser = createAsyncThunk<
+  User,
+  void,
+  { rejectValue: string }
+>(
   "auth/fetchCurrentUser",
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await API.get("/auth/me");
-      return data;
+
+      // Backend returns: { success: true, data: user }
+      return data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch user"
@@ -73,10 +89,21 @@ export const fetchCurrentUser = createAsyncThunk(
 // ==========================
 // LOGOUT USER
 // ==========================
-export const logoutUser = createAsyncThunk(
+export const logoutUser = createAsyncThunk<
+  boolean,
+  void,
+  { rejectValue: string }
+>(
   "auth/logoutUser",
-  async () => {
-    localStorage.removeItem("token");
-    return true;
+  async (_, { rejectWithValue }) => {
+    try {
+      await API.get("/auth/logout");
+
+      return true;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Logout failed"
+      );
+    }
   }
 );

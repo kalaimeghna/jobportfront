@@ -1,32 +1,43 @@
-import { FC } from "react";
+import React from "react";
 
-const JobSkeleton: FC = () => {
+const JobSkeleton: React.FC = () => {
   return (
-    <div className="bg-white shadow rounded-xl p-5 animate-pulse flex flex-col gap-4">
-      
-      {/* Title */}
-      <div className="h-5 bg-gray-300 rounded w-3/4"></div>
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden animate-pulse">
 
-      {/* Company + Location */}
-      <div className="flex gap-3">
-        <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-        <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+      {/* Company Banner / Logo Placeholder */}
+      <div className="h-40 bg-gray-200"></div>
+
+      <div className="p-6">
+
+        {/* Title */}
+        <div className="h-6 w-3/4 rounded bg-gray-200 mb-3"></div>
+
+        {/* Company */}
+        <div className="h-4 w-1/2 rounded bg-gray-100 mb-6"></div>
+
+        {/* Description */}
+        <div className="space-y-3">
+          <div className="h-3 rounded bg-gray-100"></div>
+          <div className="h-3 rounded bg-gray-100"></div>
+          <div className="h-3 w-4/5 rounded bg-gray-100"></div>
+        </div>
+
+        {/* Details */}
+        <div className="mt-6 space-y-3">
+
+          <div className="h-4 w-2/5 rounded bg-gray-100"></div>
+
+          <div className="h-4 w-1/3 rounded bg-gray-100"></div>
+
+          <div className="h-4 w-1/4 rounded bg-gray-100"></div>
+
+        </div>
+
+        {/* Button */}
+        <div className="mt-8 h-12 rounded-xl bg-gray-200"></div>
+
       </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <div className="h-3 bg-gray-200 rounded w-full"></div>
-        <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-      </div>
-
-      {/* Salary + Type */}
-      <div className="flex justify-between">
-        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-      </div>
-
-      {/* Button */}
-      <div className="h-10 bg-gray-300 rounded w-full"></div>
     </div>
   );
 };

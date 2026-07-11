@@ -288,15 +288,15 @@ DELETE /api/companies/:id
 ### Applications
 
 ```http
-POST /api/applications
+POST /applications
 ```
 
 ```http
-GET /api/applications
+GET /applications
 ```
 
 ```http
-PUT /api/applications/:id/status
+PUT /applications/:id/status
 ```
 
 ---
@@ -304,15 +304,15 @@ PUT /api/applications/:id/status
 ### Resumes
 
 ```http
-POST /api/resumes/upload
+POST /resumes/upload
 ```
 
 ```http
-GET /api/resumes
+GET /resumes
 ```
 
 ```http
-DELETE /api/resumes/:id
+DELETE /resumes/:id
 ```
 
 ---

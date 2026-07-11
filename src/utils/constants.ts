@@ -2,9 +2,7 @@
 // API
 // ===============================
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // ===============================
 // USER ROLES
@@ -15,6 +13,8 @@ export const USER_ROLES = {
   EMPLOYER: "employer",
   ADMIN: "admin",
 } as const;
+
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
 
 // ===============================
 // JOB TYPES
@@ -28,6 +28,8 @@ export const JOB_TYPES = [
   "Remote",
 ] as const;
 
+export type JobType = typeof JOB_TYPES[number];
+
 // ===============================
 // APPLICATION STATUS
 // ===============================
@@ -40,6 +42,8 @@ export const APPLICATION_STATUS = {
   REJECTED: "rejected",
 } as const;
 
+export type ApplicationStatus = typeof APPLICATION_STATUS[keyof typeof APPLICATION_STATUS];
+
 // ===============================
 // JOB STATUS
 // ===============================
@@ -49,32 +53,28 @@ export const JOB_STATUS = {
   CLOSED: "closed",
 } as const;
 
+export type JobStatus = typeof JOB_STATUS[keyof typeof JOB_STATUS];
+
 // ===============================
 // PAGINATION
 // ===============================
 
 export const DEFAULT_PAGE = 1;
-
 export const DEFAULT_LIMIT = 10;
-
 export const JOBS_PER_PAGE = 12;
 
 // ===============================
 // FILE UPLOAD
 // ===============================
 
-export const MAX_RESUME_SIZE =
-  5 * 1024 * 1024; // 5MB
-
+export const MAX_RESUME_SIZE = 5 * 1024 * 1024; // 5MB
 export const ALLOWED_RESUME_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-export const MAX_PROFILE_IMAGE_SIZE =
-  2 * 1024 * 1024; // 2MB
-
+export const MAX_PROFILE_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
@@ -115,38 +115,28 @@ export const ROUTES = {
   UPLOAD_RESUME: "/resume/upload",
 } as const;
 
-// ===============================
-// COMPANY
-// ===============================
-
-export const DEFAULT_COMPANY_LOGO =
-  "https://via.placeholder.com/150";
+// Helper to generate dynamic routes
+export const getJobDetailsPath = (id: string) => ROUTES.JOB_DETAILS.replace(":id", id);
 
 // ===============================
-// USER
+// COMPANY & USER
 // ===============================
 
-export const DEFAULT_AVATAR =
-  "https://via.placeholder.com/150";
+export const DEFAULT_COMPANY_LOGO = "https://via.placeholder.com/150";
+export const DEFAULT_AVATAR = "https://via.placeholder.com/150";
 
 // ===============================
 // CLOUDINARY
 // ===============================
 
 export const CLOUDINARY = {
-  CLOUD_NAME:
-    import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-
-  UPLOAD_PRESET:
-    import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+  CLOUD_NAME: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  UPLOAD_PRESET: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
 };
 
 // ===============================
-// APP
+// APP INFO
 // ===============================
 
-export const APP_NAME =
-  "MERN Job Portal";
-
-export const APP_DESCRIPTION =
-  "Find jobs, hire talent, and grow your career.";
+export const APP_NAME = "MERN Job Portal";
+export const APP_DESCRIPTION = "Find jobs, hire talent, and grow your career.";

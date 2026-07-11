@@ -1,24 +1,26 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../api/axios";
 
+// Assuming you have a Resume interface in your slice
+export interface Resume {
+  _id: string;
+  url: string;
+  filename: string;
+}
+
 // ==========================
 // UPLOAD RESUME
 // ==========================
-export const uploadResume = createAsyncThunk(
+export const uploadResume = createAsyncThunk<Resume, FormData, { rejectValue: string }>(
   "resume/uploadResume",
-  async (formData: FormData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
       const { data } = await API.post("/resumes/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Resume upload failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Resume upload failed");
     }
   }
 );
@@ -26,16 +28,14 @@ export const uploadResume = createAsyncThunk(
 // ==========================
 // GET USER RESUME
 // ==========================
-export const fetchResume = createAsyncThunk(
+export const fetchResume = createAsyncThunk<Resume, void, { rejectValue: string }>(
   "resume/fetchResume",
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await API.get("/resumes/my-resume");
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch resume"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch resume");
     }
   }
 );
@@ -43,24 +43,16 @@ export const fetchResume = createAsyncThunk(
 // ==========================
 // UPDATE RESUME
 // ==========================
-export const updateResume = createAsyncThunk(
+export const updateResume = createAsyncThunk<Resume, FormData, { rejectValue: string }>(
   "resume/updateResume",
-  async (
-    formData: FormData,
-    { rejectWithValue }
-  ) => {
+  async (formData, { rejectWithValue }) => {
     try {
       const { data } = await API.put("/resumes/update", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Resume update failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Resume update failed");
     }
   }
 );
@@ -68,16 +60,13 @@ export const updateResume = createAsyncThunk(
 // ==========================
 // DELETE RESUME
 // ==========================
-export const deleteResume = createAsyncThunk(
+export const deleteResume = createAsyncThunk<void, void, { rejectValue: string }>(
   "resume/deleteResume",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await API.delete("/resumes/delete");
-      return data;
+      await API.delete("/resumes/delete");
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Resume deletion failed"
-      );
+      return rejectWithValue(error.response?.data?.message || "Resume deletion failed");
     }
   }
 );
