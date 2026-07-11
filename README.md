@@ -206,7 +206,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 ### Frontend `.env`
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=https://jobport-back-1.onrender.com
 
 VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
 
@@ -418,3 +418,11 @@ MIT License
 Copyright (c) 2026
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files to deal in the Software without restriction.
+
+Demo Credentials:
+employer:
+email:arone@gmail.com
+Password:123456
+Jobseeker:
+email:johnjobseeker@gmail.com
+password:123456
