@@ -206,7 +206,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 ### Frontend `.env`
 
 ```env
-VITE_API_URL=https://jobport-back-1.onrender.com
+VITE_API_URL=https://jobport-back-2.onrender.com
 
 VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
 
