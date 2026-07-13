@@ -37,31 +37,47 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [jobRes, companyRes] = await Promise.all([
-          axiosInstance.get("/jobs/recommended"),
-          axiosInstance.get("/companies"),
-        ]);
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-        // Recommended Jobs
-        if (jobRes.data?.success) {
-          setRecommendations((jobRes.data.data || []).slice(0, 3));
-        }
+      const requests = [axiosInstance.get("/companies")];
 
-        // Featured Companies
-        if (companyRes.data?.success) {
-          setCompanies((companyRes.data.data || []).slice(0, 3));
-        }
-      } catch (err) {
-        console.error("Error loading home page:", err);
-      } finally {
-        setLoading(false);
+      if (token) {
+        requests.unshift(axiosInstance.get("/jobs/recommended"));
       }
-    };
 
-    fetchData();
-  }, []);
+      const responses = await Promise.all(requests);
+
+      if (token) {
+        const jobRes = responses[0];
+        const companyRes = responses[1];
+
+        if (jobRes.data?.success) {
+          setRecommendations(jobRes.data.data || []);
+        }
+
+        if (companyRes.data?.success) {
+          setCompanies(companyRes.data.data || []);
+        }
+      } else {
+        const companyRes = responses[0];
+
+        if (companyRes.data?.success) {
+          setCompanies(companyRes.data.data || []);
+        }
+
+        setRecommendations([]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-20">
