@@ -2,7 +2,10 @@
  * src/types/job.types.ts
  */
 
-// --- User & Profile Interfaces ---
+// ======================================================
+// USER TYPES
+// ======================================================
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -23,22 +26,48 @@ export interface UserUpdatePayload {
   education: string;
 }
 
-// --- Company Interfaces ---
+// ======================================================
+// COMPANY TYPES
+// ======================================================
+
+export interface CompanyLogo {
+  url: string;
+  publicId?: string;
+}
+
+export interface CompanyOwner {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 export interface Company {
   _id: string;
+
   companyName: string;
+
   email: string;
+
   website?: string;
+
   location?: string;
+
   industry?: string;
+
   description?: string;
-  logo?: string;
-  owner?: {
-    _id: string;
-    name: string;
-    email: string;
-  };
+
+  phone?: string;
+
+  companySize?: string;
+
+  foundedYear?: number;
+
+  logo?: CompanyLogo;
+
+  owner?: CompanyOwner;
+
   createdAt?: string;
+
   updatedAt?: string;
 }
 
@@ -49,29 +78,45 @@ export interface CreateCompanyPayload {
   location?: string;
   industry?: string;
   description?: string;
+  phone?: string;
+  companySize?: string;
+  foundedYear?: number;
 }
 
 export interface UpdateCompanyPayload {
   companyId: string;
+
   companyName?: string;
+
   email?: string;
+
   website?: string;
+
   location?: string;
+
   industry?: string;
+
   description?: string;
-  logo?: string | File;
+
+  phone?: string;
+
+  companySize?: string;
+
+  foundedYear?: number;
+
+  logo?: CompanyLogo | File;
 }
 
 export interface CompanyResponse {
   success: boolean;
   message?: string;
-  company: Company;
+  data: Company;
 }
 
 export interface CompaniesResponse {
   success: boolean;
   count: number;
-  companies: Company[];
+  data: Company[];
 }
 
 export interface CompanyState {
@@ -81,32 +126,38 @@ export interface CompanyState {
   error: string | null;
 }
 
-export interface EmployerProfileData extends Company {
-  jobs: Job[];
-}
+// ======================================================
+// JOB TYPES
+// ======================================================
 
-// --- Job Interfaces ---
-// NOTE: casing here MUST match whatever your backend actually sends.
-// Your live API response used "Full-Time" (capital T) — update this
-// union (and the backend model) so both sides agree. Also confirm
-// which convention you want long-term and update the DB/schema to match.
-export type JobType = 'Full-Time' | 'Part-Time' | 'Contract' | 'Internship';
+export type JobType =
+  | "Full-Time"
+  | "Part-Time"
+  | "Contract"
+  | "Internship";
 
 export interface Job {
   _id: string;
+
   title: string;
+
   description: string;
-  // Real API responses observed this as a plain string (often "").
-  // If requirements is meant to be a bullet list, the backend schema
-  // and the job-creation form both need to change to actually store
-  // an array. Left as string[] here ONLY if you've confirmed the
-  // backend is fixed to match — otherwise change back to `string`.
+
   requirements: string[];
+
   salary: number;
+
   jobType: JobType;
+
   location: string;
+
   companyId: string;
+
   createdAt?: string;
+}
+
+export interface EmployerProfileData extends Company {
+  jobs: Job[];
 }
 
 export interface JobsResponse {
@@ -123,15 +174,18 @@ export interface JobState {
   error: string | null;
 }
 
+// ======================================================
+// APPLICATION TYPES
+// ======================================================
+
 export type ApplicationStatus =
-  | 'Applied'
-  | 'Interview'
-  | 'Shortlisted'
-  | 'Rejected'
-  | 'Hired';
+  | "Applied"
+  | "Interview"
+  | "Shortlisted"
+  | "Rejected"
+  | "Hired";
 
 export interface UpdateStatusPayload {
   id: string;
   status: ApplicationStatus;
 }
-
