@@ -1,5 +1,14 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
-import { Loader2, Save, User, Mail, Phone, BookOpen, Briefcase, Code } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  User,
+  Phone,
+  BookOpen,
+  Briefcase,
+  Code,
+} from "lucide-react";
+
 import axiosInstance from "../../api/axios";
 import { UserUpdatePayload } from "../../types/job.types";
 

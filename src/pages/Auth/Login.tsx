@@ -4,98 +4,317 @@ import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/axios";
 import Button from "../../components/Shared/Button";
 
+interface LoginResponse {
+  success?: boolean;
+  token: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    role: "admin" | "employer" | "jobseeker";
+    profilePicture?: string;
+  };
+  message?: string;
+}
+
 const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+
+  const handleLogin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
+
+    setError("");
     setIsLoading(true);
-    setError(null);
 
     try {
-      const { data } = await axiosInstance.post("/auth/login", formData);
-      const { token, user } = data;
 
-      if (!token || !user) throw new Error("Invalid response from server");
+      const response = await axiosInstance.post<LoginResponse>(
+        "/auth/login",
+        {
+          email: formData.email.trim(),
+          password: formData.password,
+        }
+      );
 
-      // Save to localStorage and Context
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+
+      const { token, user } = response.data;
+
+
+      if (!token || !user) {
+        throw new Error(
+          "Invalid login response from server"
+        );
+      }
+
+
+      // IMPORTANT:
+      // AuthContext should save token and user
       await login(user, token);
 
-      // Role-based redirection
-      const roleRedirects: Record<string, string> = {
-        admin: "/admin/dashboard",
-        employer: "/dashboard",
-        jobseeker: "/jobs",
-      };
 
-      navigate(roleRedirects[user.role] || "/", { replace: true });
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid email or password");
+
+      // Role based navigation
+
+      if (user.role === "admin") {
+
+        navigate(
+          "/admin/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+      } 
+      else if (user.role === "employer") {
+
+        navigate(
+          "/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+      } 
+      else if (user.role === "jobseeker") {
+
+        navigate(
+          "/jobs",
+          {
+            replace: true,
+          }
+        );
+
+      } 
+      else {
+
+        navigate(
+          "/",
+          {
+            replace: true,
+          }
+        );
+
+      }
+
+
+    } catch (error: any) {
+
+      console.error(
+        "LOGIN ERROR:",
+        error
+      );
+
+
+      setError(
+        error.response?.data?.message ||
+        "Invalid email or password"
+      );
+
+
     } finally {
+
       setIsLoading(false);
+
     }
   };
 
+
   return (
+
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+
+
       <form
         onSubmit={handleLogin}
-        className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 w-full max-w-md flex flex-col gap-6"
+        className="
+          bg-white
+          w-full
+          max-w-md
+          rounded-3xl
+          shadow-xl
+          border
+          border-slate-200
+          p-8
+          space-y-6
+        "
       >
+
+
         <div className="text-center">
-          <h1 className="text-2xl font-black text-slate-950">Welcome Back</h1>
-          <p className="text-slate-500 text-sm mt-1">Sign in to your CareerHub account</p>
+
+          <h1 className="text-3xl font-bold text-slate-900">
+            Welcome Back
+          </h1>
+
+
+          <p className="text-slate-500 mt-2">
+            Login to continue to CareerHub
+          </p>
+
         </div>
 
+
+
         {error && (
-          <div className="bg-rose-50 text-rose-700 text-xs font-bold p-4 rounded-xl border border-rose-100 text-center">
+
+          <div
+            className="
+              bg-red-50
+              border
+              border-red-200
+              text-red-600
+              p-3
+              rounded-lg
+              text-sm
+            "
+          >
+
             {error}
+
           </div>
+
         )}
 
-        <div className="flex flex-col gap-4">
+
+
+        <div className="space-y-4">
+
+
           <input
-            name="email"
             type="email"
+            name="email"
             placeholder="Email Address"
             required
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition"
+            className="
+              w-full
+              border
+              rounded-xl
+              p-4
+              outline-none
+              focus:ring-2
+              focus:ring-blue-600
+            "
           />
+
+
+
           <input
-            name="password"
             type="password"
+            name="password"
             placeholder="Password"
             required
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition"
+            className="
+              w-full
+              border
+              rounded-xl
+              p-4
+              outline-none
+              focus:ring-2
+              focus:ring-blue-600
+            "
           />
+
+
         </div>
 
-        <Button type="submit" isLoading={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 py-4 font-bold text-white rounded-xl transition">
+
+
+
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          className="
+            w-full
+            bg-blue-600
+            hover:bg-blue-700
+            text-white
+            py-4
+            rounded-xl
+            font-semibold
+          "
+        >
+
           Login
+
         </Button>
 
+
+
+
+        <div className="text-center">
+
+          <Link
+            to="/forgot-password"
+            className="
+              text-blue-600
+              text-sm
+              hover:underline
+            "
+          >
+
+            Forgot Password?
+
+          </Link>
+
+        </div>
+
+
+
+
         <p className="text-center text-sm text-slate-600">
+
           Don't have an account?{" "}
-          <Link to="/register" className="font-bold text-blue-600 hover:underline">Register here</Link>
+
+
+          <Link
+            to="/register"
+            className="
+              text-blue-600
+              font-semibold
+              hover:underline
+            "
+          >
+
+            Register here
+
+          </Link>
+
+
         </p>
+
+
       </form>
+
+
     </div>
+
   );
 };
+
 
 export default Login;

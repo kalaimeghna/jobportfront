@@ -42,24 +42,16 @@ export const axiosFormData = axios.create({
    ATTACH JWT TOKEN
 ====================================================== */
 
-const attachToken = (
-  config: InternalAxiosRequestConfig
-) => {
+const attachToken = (config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem("token");
 
-  console.log("TOKEN FROM STORAGE:", token);
-
   if (token) {
-    config.headers.set(
-      "Authorization",
-      `Bearer ${token}`
-    );
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
 };
-
-
 /* ======================================================
    REQUEST INTERCEPTORS
 ====================================================== */

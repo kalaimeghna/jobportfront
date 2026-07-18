@@ -1,97 +1,186 @@
 import { useEffect, useState } from "react";
-import { FileText, Download, Trash2, Loader2, UploadCloud } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Trash2,
+  Loader2,
+  UploadCloud,
+} from "lucide-react";
 import axiosInstance from "../../api/axios";
 
 interface ResumeData {
   _id: string;
   fileName: string;
-  uploadedAt: string;
-  size: string;
-  url: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+  createdAt: string;
 }
 
 const ResumeDetails = () => {
   const [resume, setResume] = useState<ResumeData | null>(null);
-  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchResume = async () => {
-      try {
-        const { data } = await axiosInstance.get("/users/resume");
-        setResume(data.data);
-      } catch (err) {
-        console.error("No resume found:", err);
-      } finally {
-        setFetching(false);
-      }
-    };
     fetchResume();
   }, []);
 
-  const handleDelete = async () => {
-    if (!resume) return;
-    if (!window.confirm("Are you sure you want to delete this resume?")) return;
-
-    setLoading(true);
+  const fetchResume = async () => {
     try {
-      await axiosInstance.delete(`/users/resume/${resume._id}`);
+      const { data } = await axiosInstance.get("/resumes/my");
+
+      if (Array.isArray(data.data) && data.data.length > 0) {
+        setResume(data.data.find((r: any) => r.isDefault) || data.data[0]);
+      } else {
+        setResume(null);
+      }
+    } catch (error) {
+      console.error(error);
       setResume(null);
-    } catch (err) {
-      alert("Failed to delete resume.");
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const deleteResume = async () => {
+    if (!resume) return;
+
+    if (!window.confirm("Delete this resume?")) return;
+
+    try {
+      setLoading(true);
+
+      await axiosInstance.delete(`/resumes/${resume._id}`);
+
+      setResume(null);
+
+      alert("Resume deleted successfully.");
+    } catch (error) {
+      console.error(error);
+      alert("Unable to delete resume.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetching) return <div className="text-center py-20 text-slate-400 font-bold">Loading document...</div>;
+  if (fetching) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <header className="mb-10">
-        <h1 className="text-4xl font-black text-slate-950 tracking-tighter">My Resume</h1>
-        <p className="text-slate-500 font-medium mt-2">Manage your uploaded career documents.</p>
-      </header>
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="bg-white rounded-3xl shadow-lg p-8">
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-8">
-        {resume ? (
-          <div className="space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-white rounded-2xl shadow-sm text-red-500">
-                  <FileText size={24} />
-                </div>
-                <div>
-                  <h2 className="font-black text-slate-900">{resume.fileName}</h2>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                    Uploaded: {new Date(resume.uploadedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <a href={resume.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-white px-5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:text-blue-600 transition border border-slate-200">
-                  <Download size={16} /> Download
-                </a>
-                <button onClick={handleDelete} disabled={loading} className="flex items-center gap-2 bg-rose-50 text-rose-600 px-5 py-3 rounded-xl font-bold text-sm hover:bg-rose-100 transition">
-                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-                  Delete
-                </button>
-              </div>
-            </div>
+        <h1 className="text-3xl font-bold mb-2">
+          My Resume
+        </h1>
 
-            {/* Preview Container */}
-            <div className="h-[600px] w-full bg-slate-100 rounded-3xl border-4 border-slate-50 overflow-hidden shadow-inner">
-              <iframe src={resume.url} title="Resume Preview" className="w-full h-full border-none" />
-            </div>
+        <p className="text-gray-500 mb-8">
+          Manage your uploaded resume.
+        </p>
+
+        {!resume ? (
+          <div className="border-2 border-dashed rounded-2xl py-16 flex flex-col items-center">
+
+            <UploadCloud
+              size={60}
+              className="text-gray-400 mb-5"
+            />
+
+            <h2 className="text-xl font-semibold">
+              No Resume Uploaded
+            </h2>
+
+            <p className="text-gray-500 mt-2">
+              Upload your resume to apply for jobs.
+            </p>
+
           </div>
         ) : (
-          <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl">
-            <UploadCloud size={48} className="mx-auto text-slate-300 mb-4" />
-            <h3 className="font-black text-slate-900 text-lg">No resume uploaded</h3>
-            <p className="text-slate-500 mt-2 font-medium">Upload a file to showcase your skills to employers.</p>
-          </div>
+          <>
+            <div className="bg-gray-50 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+
+              <div className="flex items-center gap-4">
+
+                <div className="bg-red-100 p-4 rounded-xl">
+                  <FileText
+                    className="text-red-600"
+                    size={28}
+                  />
+                </div>
+
+                <div>
+                  <h2 className="font-bold text-lg">
+                    {resume.fileName}
+                  </h2>
+
+                  <p className="text-gray-500">
+                    Uploaded on{" "}
+                    {new Date(resume.createdAt).toLocaleDateString()}
+                  </p>
+
+                  <p className="text-gray-500">
+                    {(resume.fileSize / 1024).toFixed(2)} KB
+                  </p>
+
+                  <p className="text-gray-500 uppercase">
+                    {resume.fileType}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex gap-3">
+
+                <a
+                  href={resume.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg flex items-center gap-2"
+                >
+                  <Download size={18} />
+                  Download
+                </a>
+
+                <button
+                  onClick={deleteResume}
+                  disabled={loading}
+                  className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg flex items-center gap-2"
+                >
+                  {loading ? (
+                    <Loader2
+                      size={18}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Trash2 size={18} />
+                  )}
+
+                  Delete
+                </button>
+
+              </div>
+
+            </div>
+
+            <div className="mt-8 border rounded-2xl overflow-hidden h-[700px]">
+
+              <iframe
+                src={resume.fileUrl}
+                title="Resume Preview"
+                className="w-full h-full"
+              />
+
+            </div>
+
+          </>
         )}
+
       </div>
     </div>
   );

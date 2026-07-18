@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../api/axios";
 
@@ -10,16 +10,16 @@ interface Company {
 interface Job {
   _id: string;
   title: string;
-  company: Company;
+  company?: Company;
   location: string;
   jobType: string;
   salaryMin: number;
   salaryMax: number;
-  status: string;
+  status?: string;
   createdAt: string;
 }
 
-const MyJobs = () => {
+const MyJobs: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,25 +29,42 @@ const MyJobs = () => {
 
   const fetchMyJobs = async () => {
     try {
-      const { data } = await axiosInstance.get("/jobs/employer/my-jobs");
+      setLoading(true);
 
-      setJobs(data.data || []);
+      const { data } = await axiosInstance.get("/jobs/my");
+
+      console.log("MY JOBS RESPONSE:", data);
+
+      if (Array.isArray(data)) {
+        setJobs(data);
+      } else if (Array.isArray(data.data)) {
+        setJobs(data.data);
+      } else if (Array.isArray(data.jobs)) {
+        setJobs(data.jobs);
+      } else {
+        setJobs([]);
+      }
     } catch (error) {
       console.error("Error fetching jobs:", error);
+      setJobs([]);
     } finally {
       setLoading(false);
     }
   };
 
   const deleteJob = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this job?")) {
-      return;
-    }
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this job?"
+    );
+
+    if (!confirmDelete) return;
 
     try {
       await axiosInstance.delete(`/jobs/${id}`);
 
       setJobs((prev) => prev.filter((job) => job._id !== id));
+
+      alert("Job deleted successfully.");
     } catch (error) {
       console.error(error);
       alert("Failed to delete job.");
@@ -56,43 +73,49 @@ const MyJobs = () => {
 
   if (loading) {
     return (
-      <div className="text-center mt-10">
-        Loading your jobs...
+      <div className="flex justify-center items-center h-64 text-lg font-semibold">
+        Loading jobs...
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 p-6 bg-white rounded-lg shadow">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          My Job Postings
-        </h2>
+    <div className="max-w-7xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">
+          My Jobs
+        </h1>
 
         <Link
-          to="/employer/create-job"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          to="/jobs/create"
+          className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
         >
-          Post New Job
+          + Post Job
         </Link>
       </div>
 
       {jobs.length === 0 ? (
-        <p className="text-gray-500">
-          You haven't posted any jobs yet.
-        </p>
+        <div className="bg-white rounded-lg shadow p-10 text-center">
+          <h2 className="text-xl font-semibold">
+            No Jobs Found
+          </h2>
+
+          <p className="text-gray-500 mt-2">
+            You haven't posted any jobs yet.
+          </p>
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="p-3 text-left">Title</th>
-                <th className="p-3 text-left">Company</th>
-                <th className="p-3 text-left">Location</th>
-                <th className="p-3 text-left">Type</th>
-                <th className="p-3 text-left">Salary</th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">Actions</th>
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="min-w-full">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="text-left p-4">Title</th>
+                <th className="text-left p-4">Company</th>
+                <th className="text-left p-4">Location</th>
+                <th className="text-left p-4">Type</th>
+                <th className="text-left p-4">Salary</th>
+                <th className="text-left p-4">Status</th>
+                <th className="text-center p-4">Actions</th>
               </tr>
             </thead>
 
@@ -102,45 +125,47 @@ const MyJobs = () => {
                   key={job._id}
                   className="border-b hover:bg-gray-50"
                 >
-                  <td className="p-3">
+                  <td className="p-4 font-medium">
                     {job.title}
                   </td>
 
-                  <td className="p-3">
-                    {job.company?.companyName}
+                  <td className="p-4">
+                    {job.company?.companyName || "-"}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-4">
                     {job.location}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-4">
                     {job.jobType}
                   </td>
 
-                  <td className="p-3">
-                    ₹{job.salaryMin.toLocaleString()} - ₹
-                    {job.salaryMax.toLocaleString()}
+                  <td className="p-4">
+                    ₹{job.salaryMin?.toLocaleString()} - ₹
+                    {job.salaryMax?.toLocaleString()}
                   </td>
 
-                  <td className="p-3">
-                    {job.status}
+                  <td className="p-4">
+                    {job.status || "Open"}
                   </td>
 
-                  <td className="p-3 flex gap-3">
-                    <Link
-                      to={`/employer/edit-job/${job._id}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Edit
-                    </Link>
+                  <td className="p-4">
+                    <div className="flex gap-4 justify-center">
+                      <Link
+                        to={`/jobs/edit/${job._id}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Edit
+                      </Link>
 
-                    <button
-                      onClick={() => deleteJob(job._id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Delete
-                    </button>
+                      <button
+                        onClick={() => deleteJob(job._id)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

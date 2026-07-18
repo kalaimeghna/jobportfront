@@ -1,27 +1,64 @@
-import { Navigate, Outlet } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "../app/store"; // Adjust path to your store
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Loader from "../components/Shared/Loader";
 
 interface Props {
   redirectTo?: string;
 }
 
-const PrivateRoute = ({ redirectTo = "/login" }: Props) => {
-  // Access the auth state from Redux
-  const { user, loading } = useSelector((state: RootState) => state.auth);
+const PrivateRoute = ({
+  redirectTo = "/login",
+}: Props) => {
 
-  // 1. While the app is checking if the user is logged in, show a loader
+  const {
+    user,
+    loading,
+    isAuthenticated,
+  } = useAuth();
+
+
+  const location = useLocation();
+
+
+
   if (loading) {
-    return <div>Loading...</div>; // Or your custom Spinner component
+
+    return (
+      <Loader
+        fullScreen
+        text="Checking authentication..."
+      />
+    );
+
   }
 
-  // 2. If no user is found, redirect to login
-  if (!user) {
-    return <Navigate to={redirectTo} replace />;
+
+
+  if (!isAuthenticated || !user) {
+
+    return (
+
+      <Navigate
+
+        to={redirectTo}
+
+        replace
+
+        state={{
+          from: location.pathname
+        }}
+
+      />
+
+    );
+
   }
 
-  // 3. If logged in, show the protected content
+
+
   return <Outlet />;
+
 };
+
 
 export default PrivateRoute;

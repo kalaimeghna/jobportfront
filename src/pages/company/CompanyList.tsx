@@ -1,90 +1,134 @@
-import { Link } from "react-router-dom";
-import { Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import CompanyCard from "../../components/Company/CompanyCard";
+import { getCompanies } from "../../api/companyApi";
+import type { Company } from "../../types/company.types";
 
-interface CompanyLogo {
-  url: string;
-  public_id?: string;
-}
+const CompanyList = () => {
 
-interface Company {
-  _id: string;
-  companyName: string;
-  description?: string;
-  location?: string;
-  industry?: string;
-  logo?: string | CompanyLogo;
-}
-
-interface CompanyListProps {
-  companies: Company[];
-}
-
-const CompanyList = ({ companies }: CompanyListProps) => {
-  return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {companies.map((company) => {
-        // Convert logo object/string into a usable string URL
-        const logoUrl =
-          typeof company.logo === "string"
-            ? company.logo
-            : company.logo?.url;
-
-        return (
-          <div
-            key={company._id}
-            className="bg-white rounded-xl shadow-md p-6 border"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={company.companyName}
-                  className="w-16 h-16 rounded-full object-cover border"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                  <Building2 size={30} />
-                </div>
-              )}
-
-              <div>
-                <h2 className="text-xl font-semibold">
-                  {company.companyName}
-                </h2>
-
-                <p className="text-gray-500">
-                  {company.location || "Location not available"}
-                </p>
-              </div>
-
-            </div>
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
 
 
-            <p className="text-gray-600 line-clamp-3">
-              {company.description || "No description available"}
-            </p>
+
+  useEffect(() => {
+
+    const fetchCompanies = async () => {
+
+      try {
+
+        const response = await getCompanies();
 
 
-            {company.industry && (
-              <p className="mt-3 text-sm text-blue-600">
-                {company.industry}
-              </p>
-            )}
+        console.log("COMPANY RESPONSE:", response);
 
 
-            <Link
-              to={`/companies/${company._id}`}
-              className="inline-block mt-5 text-blue-600 hover:underline"
-            >
-              View Company
-            </Link>
+        // Handle API response format
+        const companyData =
+          response.data?.data ||
+          response.data ||
+          response;
 
-          </div>
+
+        setCompanies(
+          Array.isArray(companyData)
+            ? companyData
+            : []
         );
-      })}
+
+
+      } catch (error) {
+
+        console.error(
+          "Failed to fetch companies",
+          error
+        );
+
+
+        setCompanies([]);
+
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+    fetchCompanies();
+
+
+  }, []);
+
+
+
+
+
+  if (loading) {
+
+    return (
+      <div className="flex justify-center py-10">
+        Loading companies...
+      </div>
+    );
+
+  }
+
+
+
+
+  if (companies.length === 0) {
+
+    return (
+
+      <div className="text-center py-10 text-gray-500">
+
+        No companies found.
+
+      </div>
+
+    );
+
+  }
+
+
+
+
+
+  return (
+
+    <div className="container mx-auto px-6 py-10">
+
+      <h1 className="text-3xl font-bold mb-8">
+        Companies
+      </h1>
+
+
+      <div className="grid md:grid-cols-3 gap-6">
+
+
+        {companies.map((company) => (
+
+          <CompanyCard
+
+            key={company._id}
+
+            company={company}
+
+          />
+
+        ))}
+
+
+      </div>
+
+
     </div>
+
   );
+
 };
+
 
 export default CompanyList;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   Search,
   Briefcase,
@@ -7,6 +7,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 import axiosInstance from "../../api/axios";
 import JobCard from "../../components/Jobs/JobCard";
@@ -31,10 +32,12 @@ const SectionHeading = ({
 );
 
 const Home = () => {
+   const { user, loading: authLoading } = useAuth();
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
   const fetchData = async () => {
@@ -78,7 +81,13 @@ const Home = () => {
 
   fetchData();
 }, []);
+if (authLoading) {
+  return null; // or a loading spinner
+}
 
+if (user) {
+  return <Navigate to="/dashboard" replace />;
+}
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-20">
 

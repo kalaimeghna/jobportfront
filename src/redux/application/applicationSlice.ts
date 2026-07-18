@@ -1,98 +1,786 @@
-import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  PayloadAction,
+  createAsyncThunk,
+} from "@reduxjs/toolkit";
+
 import axiosInstance from "../../api/axios";
 
-export type ApplicationStatus = "Applied" | "Interview" | "Shortlisted" | "Rejected" | "Hired";
+
+// =================================================
+// APPLICATION STATUS
+// =================================================
+
+export type ApplicationStatus =
+  | "pending"
+  | "reviewed"
+  | "interview"
+  | "accepted"
+  | "rejected";
+
+
+
+// =================================================
+// APPLICATION TYPE
+// =================================================
 
 export interface Application {
-  _id: string;
-  applicant: string;
-  job: string;
-  company: string;
-  status: ApplicationStatus;
-  resume?: string;
-  createdAt?: string;
+
+  _id:string;
+
+
+  job:
+  {
+    _id:string;
+    title:string;
+
+    company?:{
+      _id?:string;
+      companyName:string;
+      logo?:string;
+    };
+
+    location?:string;
+
+  } | null;
+
+
+
+  applicant:
+  {
+    _id:string;
+    name:string;
+    email:string;
+
+  } | null;
+
+
+
+  resumeUrl?:string;
+
+  coverLetter?:string;
+
+  coverLetterUrl?:string;
+
+
+  status:ApplicationStatus;
+
+
+  expectedSalary?:number;
+
+
+  createdAt?:string;
+
+  updatedAt?:string;
+
 }
+
+
+
+
+// =================================================
+// STATE
+// =================================================
 
 interface ApplicationState {
-  applications: Application[];
-  selectedApplication: Application | null;
-  loading: boolean;
-  error: string | null;
+
+  applications:Application[];
+
+  selectedApplication:Application|null;
+
+  loading:boolean;
+
+  error:string|null;
+
 }
 
-const initialState: ApplicationState = {
-  applications: [],
-  selectedApplication: null,
-  loading: false,
-  error: null,
+
+
+const initialState:ApplicationState={
+
+  applications:[],
+
+  selectedApplication:null,
+
+  loading:false,
+
+  error:null,
+
 };
 
-// Async Thunk Example: Fetching applications
-export const fetchApplications = createAsyncThunk("applications/fetchAll", async (_, { rejectWithValue }) => {
-  try {
-    const { data } = await axiosInstance.get("/applications");
-    return data.data;
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || "Failed to fetch applications");
-  }
+
+
+
+// =================================================
+// APPLY JOB
+// =================================================
+
+export const applyJob=createAsyncThunk<
+
+Application,
+
+{
+
+ jobId:string;
+
+ formData:FormData;
+
+},
+
+{rejectValue:string}
+
+>(
+
+"applications/apply",
+
+async(
+payload,
+{rejectWithValue}
+)=>{
+
+try{
+
+
+const {data}=await axiosInstance.post(
+
+`/applications/apply/${payload.jobId}`,
+
+payload.formData,
+
+{
+
+headers:{
+
+"Content-Type":"multipart/form-data"
+
+}
+
+}
+
+);
+
+
+
+return data.data;
+
+
+
+}
+
+catch(error:any){
+
+
+return rejectWithValue(
+
+error.response?.data?.message ||
+
+"Job application failed"
+
+);
+
+
+}
+
+
+}
+
+);
+
+
+
+
+// =================================================
+// FETCH MY APPLICATIONS
+// =================================================
+
+export const fetchMyApplications=createAsyncThunk<
+
+Application[],
+
+void,
+
+{rejectValue:string}
+
+>(
+
+"applications/my",
+
+async(_,
+{rejectWithValue}
+
+)=>{
+
+try{
+
+
+const {data}=await axiosInstance.get(
+
+"/applications/my"
+
+);
+
+
+
+return (
+
+data.data ||
+
+data.applications ||
+
+[]
+
+);
+
+
+
+}
+
+catch(error:any){
+
+
+return rejectWithValue(
+
+error.response?.data?.message ||
+
+"Failed to fetch applications"
+
+);
+
+
+}
+
+
+}
+
+);
+
+
+
+
+
+// =================================================
+// FETCH ALL APPLICATIONS (ADMIN / ATS)
+// =================================================
+
+export const fetchApplications=createAsyncThunk<
+
+Application[],
+
+void,
+
+{rejectValue:string}
+
+>(
+
+
+"applications/all",
+
+async(_,
+{rejectWithValue}
+
+)=>{
+
+
+try{
+
+
+const {data}=await axiosInstance.get(
+
+"/applications/employer/dashboard"
+
+);
+
+
+
+return data.data || [];
+
+
+
+}
+
+catch(error:any){
+
+
+return rejectWithValue(
+
+error.response?.data?.message ||
+
+"Failed to fetch applications"
+
+);
+
+
+}
+
+
+}
+
+);
+
+
+
+
+
+// =================================================
+// FETCH SINGLE APPLICATION
+// =================================================
+
+export const fetchApplicationById=createAsyncThunk<
+
+Application,
+
+string,
+
+{rejectValue:string}
+
+>(
+
+
+"applications/byId",
+
+async(
+
+id,
+
+{rejectWithValue}
+
+)=>{
+
+
+try{
+
+
+const {data}=await axiosInstance.get(
+
+`/applications/${id}`
+
+);
+
+
+
+return data.data;
+
+
+
+}
+
+catch(error:any){
+
+
+return rejectWithValue(
+
+error.response?.data?.message ||
+
+"Application not found"
+
+);
+
+
+}
+
+
+}
+
+);
+
+
+
+
+
+// =================================================
+// UPDATE APPLICATION STATUS
+// =================================================
+
+export const updateApplicationStatus=createAsyncThunk<
+
+Application,
+
+{
+
+id:string;
+
+status:ApplicationStatus;
+
+},
+
+{rejectValue:string}
+
+>(
+
+
+"applications/updateStatus",
+
+async(
+
+payload,
+
+{rejectWithValue}
+
+)=>{
+
+
+try{
+
+
+const {data}=await axiosInstance.patch(
+
+`/applications/${payload.id}/status`,
+
+{
+
+status:payload.status
+
+}
+
+);
+
+
+
+return data.data;
+
+
+
+}
+
+catch(error:any){
+
+
+return rejectWithValue(
+
+error.response?.data?.message ||
+
+"Status update failed"
+
+);
+
+
+}
+
+
+}
+
+);
+
+
+
+
+
+
+
+// =================================================
+// SLICE
+// =================================================
+
+
+const applicationSlice=createSlice({
+
+
+name:"applications",
+
+
+initialState,
+
+
+reducers:{
+
+
+
+clearApplications:(state)=>{
+
+
+state.applications=[];
+
+state.selectedApplication=null;
+
+
+},
+
+
+
+clearError:(state)=>{
+
+
+state.error=null;
+
+
+},
+
+
+
+setSelectedApplication:(
+
+state,
+
+action:PayloadAction<Application|null>
+
+)=>{
+
+
+state.selectedApplication=
+
+action.payload;
+
+
+},
+
+
+
+},
+
+
+
+
+extraReducers:(builder)=>{
+
+
+builder
+
+
+
+// ---------------- APPLY JOB ----------------
+
+
+.addCase(
+
+applyJob.fulfilled,
+
+(state,action)=>{
+
+
+state.applications.push(
+
+action.payload
+
+);
+
+
+}
+
+)
+
+
+
+
+// ---------------- FETCH MY ----------------
+
+
+.addCase(
+
+fetchMyApplications.pending,
+
+(state)=>{
+
+state.loading=true;
+
+state.error=null;
+
+}
+
+)
+
+
+
+.addCase(
+
+fetchMyApplications.fulfilled,
+
+(state,action)=>{
+
+
+state.loading=false;
+
+
+state.applications=
+
+action.payload;
+
+
+}
+
+)
+
+
+
+.addCase(
+
+fetchMyApplications.rejected,
+
+(state,action)=>{
+
+
+state.loading=false;
+
+
+state.error=
+
+action.payload || null;
+
+
+}
+
+)
+
+
+
+
+// ---------------- FETCH ATS ----------------
+
+
+.addCase(
+
+fetchApplications.fulfilled,
+
+(state,action)=>{
+
+
+state.applications=
+
+action.payload;
+
+
+}
+
+)
+
+
+
+
+
+// ---------------- SINGLE APPLICATION ----------------
+
+
+.addCase(
+
+fetchApplicationById.pending,
+
+(state)=>{
+
+
+state.loading=true;
+
+
+}
+
+)
+
+
+.addCase(
+
+fetchApplicationById.fulfilled,
+
+(state,action)=>{
+
+
+state.loading=false;
+
+
+state.selectedApplication=
+
+action.payload;
+
+
+}
+
+)
+
+
+.addCase(
+
+fetchApplicationById.rejected,
+
+(state,action)=>{
+
+
+state.loading=false;
+
+
+state.error=
+
+action.payload || null;
+
+
+}
+
+)
+
+
+
+
+
+// ---------------- UPDATE STATUS ----------------
+
+
+.addCase(
+
+updateApplicationStatus.fulfilled,
+
+(state,action)=>{
+
+
+const index=
+
+state.applications.findIndex(
+
+app=>app._id===action.payload._id
+
+);
+
+
+
+if(index!==-1){
+
+state.applications[index]=
+
+action.payload;
+
+}
+
+
+
+if(
+
+state.selectedApplication?._id===
+
+action.payload._id
+
+){
+
+state.selectedApplication=
+
+action.payload;
+
+}
+
+
+
+}
+
+);
+
+
+
+}
+
+
+
 });
 
-const applicationSlice = createSlice({
-  name: "applications",
-  initialState,
-  reducers: {
-    setApplications: (state, action: PayloadAction<Application[]>) => {
-      state.applications = action.payload;
-    },
-    setSelectedApplication: (state, action: PayloadAction<Application | null>) => {
-      state.selectedApplication = action.payload;
-    },
-    addApplication: (state, action: PayloadAction<Application>) => {
-      state.applications.push(action.payload);
-    },
-    updateApplicationStatus: (state, action: PayloadAction<{ id: string; status: ApplicationStatus }>) => {
-      const { id, status } = action.payload;
-      const app = state.applications.find((a) => a._id === id);
-      if (app) app.status = status;
-      if (state.selectedApplication?._id === id) {
-        state.selectedApplication.status = status;
-      }
-    },
-    deleteApplication: (state, action: PayloadAction<string>) => {
-      state.applications = state.applications.filter((a) => a._id !== action.payload);
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-    },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchApplications.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchApplications.fulfilled, (state, action) => {
-        state.loading = false;
-        state.applications = action.payload;
-      })
-      .addCase(fetchApplications.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
-  },
-});
+
+
+
 
 export const {
-  setApplications,
-  setSelectedApplication,
-  addApplication,
-  updateApplicationStatus,
-  deleteApplication,
-  setLoading,
-  setError,
-} = applicationSlice.actions;
+
+clearApplications,
+
+clearError,
+
+setSelectedApplication
+
+
+}=applicationSlice.actions;
+
+
+
 
 export default applicationSlice.reducer;

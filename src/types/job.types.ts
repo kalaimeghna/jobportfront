@@ -7,6 +7,7 @@
 // ======================================================
 
 export interface UserProfile {
+  _id?: string;
   name: string;
   email: string;
   phone: string;
@@ -14,6 +15,8 @@ export interface UserProfile {
   skills: string[];
   experience: number;
   education: string;
+  location?: string;
+  headline?: string;
   profilePicture?: string;
 }
 
@@ -24,6 +27,9 @@ export interface UserUpdatePayload {
   skills: string[];
   experience: number;
   education: string;
+  location?: string;
+  headline?: string;
+  profilePicture?: string;
 }
 
 // ======================================================
@@ -134,7 +140,8 @@ export type JobType =
   | "Full-Time"
   | "Part-Time"
   | "Contract"
-  | "Internship";
+  | "Internship"
+  | "Remote";
 
 export interface Job {
   _id: string;
@@ -145,19 +152,35 @@ export interface Job {
 
   requirements: string[];
 
-  salary: number;
-
-  jobType: JobType;
-
   location: string;
 
-  companyId: string;
+  jobType: JobType | string;
+
+  salary?: number;
+
+  salaryMin?: number;
+
+  salaryMax?: number;
+
+  experienceLevel?: string;
+
+  status?: string;
+
+  company?: Company;
+
+  companyId?: string;
+
+  createdBy?: string;
+
+  applicationDeadline?: string;
 
   createdAt?: string;
+
+  updatedAt?: string;
 }
 
 export interface EmployerProfileData extends Company {
-  jobs: Job[];
+  jobs?: Job[];
 }
 
 export interface JobsResponse {
@@ -179,13 +202,48 @@ export interface JobState {
 // ======================================================
 
 export type ApplicationStatus =
-  | "Applied"
-  | "Interview"
-  | "Shortlisted"
-  | "Rejected"
-  | "Hired";
+  | "pending"
+  | "reviewed"
+  | "interview"
+  | "accepted"
+  | "rejected";
+
+export interface Application {
+  _id: string;
+  applicant: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  job: Job;
+  resumeUrl?: string;
+  coverLetterUrl?: string;
+  status: ApplicationStatus;
+  createdAt: string;
+}
 
 export interface UpdateStatusPayload {
   id: string;
   status: ApplicationStatus;
+}
+
+// ======================================================
+// RESUME TYPES
+// ======================================================
+
+export interface Resume {
+  _id: string;
+  resumeUrl: string;
+  public_id?: string;
+  createdAt?: string;
+}
+
+// ======================================================
+// API RESPONSE TYPES
+// ======================================================
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
 }

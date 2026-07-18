@@ -6,95 +6,160 @@ import {
   FaBriefcase,
   FaBuilding,
   FaTachometerAlt,
+  FaHome,
+  FaFileAlt,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
+
   const { user, logout, loading } = useAuth();
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
-  // Function is now correctly defined inside the component scope
   const getProfileRoute = () => {
-    if (user?.role === "employer") {
-      return "/company/profile";
+    if (!user) return "/login";
+
+    switch (user.role) {
+      case "jobseeker":
+        return "/profile";
+
+      case "employer":
+        return "/employer/profile";
+
+      case "admin":
+        return "/dashboard";
+
+      default:
+        return "/";
     }
-    return "/profile";
   };
 
-  if (loading) {
-    return (
-      <nav className="h-16 bg-white border-b border-gray-200 shadow-sm" />
-    );
-  }
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-2 px-3 py-2 rounded-lg transition ${
+      isActive
+        ? "bg-blue-100 text-blue-600"
+        : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+    }`;
+
+  if (loading) return null;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between">
-        
+    <nav className="sticky top-0 z-50 bg-white shadow border-b">
+      <div className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+        <Link
+          to={user ? "/dashboard" : "/"}
+          className="flex items-center gap-3"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
             C
           </div>
-          <span className="text-xl font-bold text-gray-900">CareerHub</span>
+
+          <span className="text-xl font-bold">CareerHub</span>
         </Link>
 
         {/* Navigation */}
-        <div className="hidden md:flex items-center gap-6">
-          <NavLink to="/jobs" className="text-gray-600 hover:text-blue-600 font-medium">
-            Jobs
-          </NavLink>
-          <NavLink to="/companies" className="text-gray-600 hover:text-blue-600 font-medium">
-            Companies
-          </NavLink>
+        <div className="hidden md:flex items-center gap-2">
+          {/* Hide Home after login */}
+          {!user && (
+            <NavLink to="/" className={navClass}>
+              <FaHome />
+              Home
+            </NavLink>
+          )}
 
+          {/* Jobs & Companies */}
+          {(!user || user.role === "jobseeker") && (
+            <>
+              <NavLink to="/jobs" className={navClass}>
+                <FaBriefcase />
+                Jobs
+              </NavLink>
+
+              <NavLink to="/companies" className={navClass}>
+                <FaBuilding />
+                Companies
+              </NavLink>
+            </>
+          )}
+
+          {/* Dashboard */}
           {user && (
-            <NavLink to="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium">
+            <NavLink to="/dashboard" className={navClass}>
               <FaTachometerAlt />
               Dashboard
             </NavLink>
           )}
 
-          {/* Employer-only link to prevent 403 errors */}
+          {/* Job Seeker */}
+          {user?.role === "jobseeker" && (
+            <NavLink to="/applications" className={navClass}>
+              <FaFileAlt />
+              My Applications
+            </NavLink>
+          )}
+
+          {/* Employer */}
           {user?.role === "employer" && (
-            <NavLink to="/company/profile" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium">
+            <NavLink to="/company/profile" className={navClass}>
               <FaBuilding />
               Company Profile
             </NavLink>
           )}
         </div>
 
-        {/* User Section */}
+        {/* Right Side */}
         {user ? (
           <div className="flex items-center gap-4">
-            <div className="hidden sm:block text-right">
-              <p className="font-semibold text-gray-800">{user.name}</p>
-              <p className="text-xs capitalize text-gray-500">{user.role}</p>
+            <div className="hidden md:block text-right">
+              <h4 className="font-semibold">{user.name}</h4>
+
+              <p className="text-xs text-gray-500 capitalize">
+                {user.role}
+              </p>
             </div>
 
-            <Link to={getProfileRoute()} className="text-gray-500 hover:text-blue-600">
-              <FaUserCircle size={28} />
+            <Link to={getProfileRoute()}>
+              {user.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full object-cover border"
+                />
+              ) : (
+                <FaUserCircle
+                  size={36}
+                  className="text-gray-500 hover:text-blue-600"
+                />
+              )}
             </Link>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition"
+              className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition"
             >
               <FaSignOutAlt />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden md:inline">Logout</span>
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <Link to="/login" className="font-medium text-gray-700 hover:text-blue-600">
+            <Link
+              to="/login"
+              className="text-gray-700 hover:text-blue-600"
+            >
               Login
             </Link>
-            <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium">
+
+            <Link
+              to="/register"
+              className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
               Register
             </Link>
           </div>

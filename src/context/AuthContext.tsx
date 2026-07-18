@@ -27,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,39 +38,82 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { data } = await axiosInstance.get("/auth/me");
-      const currentUser = data.user || data.data || data;
+      const response = await axiosInstance.get("/auth/me");
+
+      const currentUser =
+        response.data?.user ??
+        response.data?.data ??
+        response.data;
+
+      if (!currentUser || !currentUser._id) {
+        throw new Error("Invalid user response");
+      }
+
       setUser(currentUser);
       localStorage.setItem("user", JSON.stringify(currentUser));
     } catch (error) {
-      console.error("Auth refresh failed", error);
-      logout();
+      console.error("Failed to refresh user:", error);
+
+      const savedUser = localStorage.getItem("user");
+
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          logout();
+        }
+      } else {
+        logout();
+      }
     } finally {
       setLoading(false);
     }
   }, [logout]);
 
-  // Sync state with localStorage across tabs
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "user") {
-        setUser(e.newValue ? JSON.parse(e.newValue) : null);
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+    const savedUser = localStorage.getItem("user");
 
-  // Initial Auth Check
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("user");
+      }
     }
+
     refreshUser();
   }, [refreshUser]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const savedUser = localStorage.getItem("user");
+
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   const login = (userData: User, token: string) => {
     localStorage.setItem("token", token);
@@ -96,8 +139,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
+
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider.");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
+
   return context;
 };

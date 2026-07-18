@@ -1,31 +1,94 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axios";
-import { Loader2, Send, CheckCircle, AlertCircle, FileText, MessageSquare } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  MessageSquare,
+} from "lucide-react";
 
 const ApplyJob = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({ resume: "", coverLetter: "" });
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [coverLetter, setCoverLetter] = useState("");
+  const [resumeUrl, setResumeUrl] = useState("");
+  const [resumeName, setResumeName] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // Load uploaded resume automatically
+  useEffect(() => {
+    const fetchResume = async () => {
+      try {
+        const res = await axiosInstance.get("/resume/my");
+
+        if (
+          res.data.success &&
+          res.data.data &&
+          res.data.data.length > 0
+        ) {
+          const resume =
+            res.data.data.find((r: any) => r.isDefault) ||
+            res.data.data[0];
+
+          setResumeUrl(resume.fileUrl);
+          setResumeName(resume.fileName);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchResume();
+  }, []);
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
+
     if (!jobId) return;
 
-    setLoading(true);
-    setStatus(null);
+    if (!resumeUrl) {
+      setStatus({
+        type: "error",
+        text: "Please upload your resume first.",
+      });
+
+      return;
+    }
 
     try {
-      await axiosInstance.post(`/applications/apply/${jobId}`, formData);
-      setStatus({ type: "success", text: "Application submitted successfully! Redirecting..." });
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setLoading(true);
+
+      await axiosInstance.post(`/applications/apply/${jobId}`, {
+        resumeUrl,
+        coverLetter,
+      });
+
+      setStatus({
+        type: "success",
+        text: "Application submitted successfully!",
+      });
+
+      setTimeout(() => {
+        navigate("/applications");
+      }, 2000);
     } catch (err: any) {
-      setStatus({ 
-        type: "error", 
-        text: err.response?.data?.message || "Failed to submit application. Please try again." 
+      setStatus({
+        type: "error",
+        text:
+          err.response?.data?.message ||
+          "Application failed.",
       });
     } finally {
       setLoading(false);
@@ -35,53 +98,102 @@ const ApplyJob = () => {
   return (
     <div className="max-w-xl mx-auto py-16 px-4">
       <div className="mb-10 text-center">
-        <h2 className="text-4xl font-black text-slate-950 tracking-tighter">Apply for this role</h2>
-        <p className="text-slate-500 mt-2">Your journey to a new career starts here.</p>
+        <h2 className="text-4xl font-black">
+          Apply for this Job
+        </h2>
+
+        <p className="text-slate-500 mt-2">
+          Submit your application below.
+        </p>
       </div>
 
       {status && (
-        <div className={`mb-8 p-4 rounded-2xl flex items-center gap-3 border ${status.type === "success" ? "bg-emerald-50 border-emerald-100 text-emerald-800" : "bg-rose-50 border-rose-100 text-rose-800"}`}>
-          {status.type === "success" ? <CheckCircle className="shrink-0" size={20} /> : <AlertCircle className="shrink-0" size={20} />}
-          <span className="text-sm font-bold">{status.text}</span>
+        <div
+          className={`mb-6 p-4 rounded-xl flex gap-2 items-center ${
+            status.type === "success"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+          }`}
+        >
+          {status.type === "success" ? (
+            <CheckCircle size={20} />
+          ) : (
+            <AlertCircle size={20} />
+          )}
+
+          {status.text}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl space-y-6">
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-            <FileText size={14} /> Resume URL
-          </label>
-          <input
-            type="url"
-            required
-            className="w-full p-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition"
-            placeholder="https://drive.google.com/file/..."
-            value={formData.resume}
-            onChange={(e) => setFormData({ ...formData, resume: e.target.value })}
-          />
-        </div>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-3xl shadow-lg border p-8 space-y-6"
+      >
+        {/* Resume */}
 
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-            <MessageSquare size={14} /> Cover Letter
+          <label className="block text-sm font-bold mb-2">
+            Resume
           </label>
+
+          <div className="border rounded-xl p-4 flex items-center gap-3 bg-slate-50">
+            <FileText className="text-blue-600" />
+
+            {resumeName ? (
+              <span className="font-medium">
+                {resumeName}
+              </span>
+            ) : (
+              <span className="text-red-500">
+                No resume uploaded
+              </span>
+            )}
+          </div>
+
+          {!resumeName && (
+            <p className="text-sm text-red-500 mt-2">
+              Upload your resume before applying.
+            </p>
+          )}
+        </div>
+
+        {/* Cover Letter */}
+
+        <div>
+          <label className="block text-sm font-bold mb-2">
+            Cover Letter
+          </label>
+
           <textarea
-            required
             rows={6}
-            className="w-full p-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-600 outline-none transition resize-none"
-            placeholder="Tell us why you are a perfect fit for this role..."
-            value={formData.coverLetter}
-            onChange={(e) => setFormData({ ...formData, coverLetter: e.target.value })}
+            required
+            value={coverLetter}
+            onChange={(e) =>
+              setCoverLetter(e.target.value)
+            }
+            placeholder="Write your cover letter..."
+            className="w-full border rounded-xl p-4 resize-none focus:ring-2 focus:ring-blue-600 outline-none"
           />
         </div>
 
         <button
-          disabled={loading}
-          type="submit"
-          className="w-full bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition flex items-center justify-center gap-2 disabled:opacity-50"
+          disabled={loading || !resumeUrl}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2 disabled:bg-gray-400"
         >
-          {loading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-          {loading ? "Submitting..." : "Submit Application"}
+          {loading ? (
+            <>
+              <Loader2
+                className="animate-spin"
+                size={20}
+              />
+              Applying...
+            </>
+          ) : (
+            <>
+              <Send size={18} />
+              Apply Now
+            </>
+          )}
         </button>
       </form>
     </div>
