@@ -150,7 +150,7 @@ const Applicants = () => {
                   <td className="px-6 py-5 text-center">
                     {app.resumeUrl ? (
                       <a
-                        href={`http://localhost:5000/${app.resumeUrl}`}
+                        href={`https://jobport-back-2.onrender.com${app.resumeUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline font-semibold"

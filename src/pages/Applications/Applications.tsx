@@ -600,7 +600,7 @@ const Applications: React.FC = () => {
 
                       <a
 
-                        href={`http://localhost:5000/${app.resumeUrl}`}
+                        href={`https://jobport-back-2.onrender.com/${app.resumeUrl}`}
 
                         target="_blank"
 
